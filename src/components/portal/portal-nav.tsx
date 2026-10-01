@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, CreditCard, TrendingUp, Utensils } from "lucide-react";
+import { Home, CreditCard, Dumbbell, TrendingUp, Utensils } from "lucide-react";
 import { cn } from "@/lib/cn";
 
-// Entrenamiento y Check-in se suman en las siguientes fases.
+// Check-in se suma en la Fase 5.
 const ITEMS = [
   { label: "Inicio", href: "/portal", icon: Home },
   { label: "Nutrición", href: "/portal/nutricion", icon: Utensils },
+  { label: "Entreno", href: "/portal/entrenamiento", icon: Dumbbell },
   { label: "Progreso", href: "/portal/progreso", icon: TrendingUp },
   { label: "Membresía", href: "/portal/membresia", icon: CreditCard },
 ];

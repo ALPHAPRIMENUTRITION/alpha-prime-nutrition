@@ -8,7 +8,7 @@ import { cn } from "@/lib/cn";
 const ITEMS = [
   { label: "Panel", href: "/coach", match: (p: string, f: string | null) => p === "/coach" && !f, icon: LayoutDashboard },
   { label: "Clientes", href: "/coach?filtro=todos#clientes", match: (p: string, f: string | null) => p.startsWith("/coach/clientes") || f === "todos", icon: Users },
-  { label: "Planes", href: "/coach/planes", match: (p: string) => p.startsWith("/coach/planes") || p.startsWith("/coach/alimentos"), icon: Utensils },
+  { label: "Planes", href: "/coach/planes", match: (p: string) => ["/coach/planes", "/coach/alimentos", "/coach/rutinas", "/coach/ejercicios"].some((x) => p.startsWith(x)), icon: Utensils },
   { label: "Check-ins", href: "/coach?filtro=checkin#clientes", match: (_: string, f: string | null) => f === "checkin", icon: ClipboardCheck },
   { label: "Pagos", href: "/coach?filtro=vencidos#clientes", match: (_: string, f: string | null) => f === "vencidos" || f === "por-vencer", icon: CreditCard },
 ];

@@ -8,6 +8,7 @@ import { buttonClass, Card } from "@/components/ui";
 import { PlanList } from "@/components/nutrition/plan-list";
 import { NewPlanForm } from "@/components/nutrition/new-plan-form";
 import type { PlanMeta } from "@/lib/nutrition/plan";
+import { PlansSwitch } from "@/components/coach/plans-switch";
 
 export const metadata: Metadata = { title: "Planes" };
 
@@ -34,8 +35,8 @@ export default async function PlansPage() {
     <div className="flex flex-col gap-8">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="eyebrow">Nutrición</p>
-          <h1 className="mt-1 font-display text-4xl font-extrabold uppercase leading-none tracking-tight sm:text-5xl">Planes</h1>
+          <PlansSwitch current="planes" />
+          <h1 className="mt-3 font-display text-4xl font-extrabold uppercase leading-none tracking-tight sm:text-5xl">Planes</h1>
         </div>
         <Link href="/coach/alimentos" className={buttonClass("secondary")}>
           <Apple size={17} /> Alimentos

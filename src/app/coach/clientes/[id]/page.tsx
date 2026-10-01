@@ -24,6 +24,10 @@ import { PhotoUpload } from "@/components/progress/photo-upload";
 import { listClientPlans, listTemplates } from "@/lib/data/nutrition";
 import { PlanList } from "@/components/nutrition/plan-list";
 import { NewPlanForm } from "@/components/nutrition/new-plan-form";
+import { exercisesByIds, getClientLogs, listClientWorkouts, listWorkoutTemplates } from "@/lib/data/training";
+import { WorkoutList } from "@/components/training/workout-list";
+import { NewWorkoutForm } from "@/components/training/new-workout-form";
+import { ProgressionView } from "@/components/training/progression-view";
 import {
   accessLinkAction,
   addMeasurementAction,
@@ -39,6 +43,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const TABS = [
   { id: "resumen", label: "Resumen" },
   { id: "nutricion", label: "Nutrición" },
+  { id: "entrenamiento", label: "Entrenamiento" },
   { id: "antropometria", label: "Antropometría" },
   { id: "progreso", label: "Progreso" },
   { id: "notas", label: "Notas" },
@@ -156,6 +161,7 @@ export default async function ClientProfilePage({
         />
       )}
       {tab === "nutricion" && <Nutrition id={id} />}
+      {tab === "entrenamiento" && <Training id={id} />}
       {tab === "antropometria" && <Anthropometry id={id} height={height} />}
       {tab === "progreso" && <Progress id={id} />}
       {tab === "notas" && <Notes id={id} />}
@@ -267,6 +273,39 @@ async function Nutrition({ id }: { id: string }) {
       </div>
       <NewPlanForm clientId={id} templates={templates.map((t) => ({ id: t.id, name: t.name, weeks: t.weeks }))} />
       <PlanList plans={plans} empty="Todavía no hay planes para este cliente." />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------- Entrenamiento
+
+async function Training({ id }: { id: string }) {
+  const [plans, templates, logs] = await Promise.all([listClientWorkouts(id), listWorkoutTemplates(), getClientLogs(id)]);
+  const exercises = await exercisesByIds([...new Set(logs.map((l) => l.exercise_id))]);
+  const active = plans.find((p) => p.is_active);
+  const lastDate = logs[0]?.performed_at;
+  return (
+    <div className="flex flex-col gap-5">
+      {active ? (
+        <Card className="flex flex-wrap items-center justify-between gap-4 p-5">
+          <div>
+            <p className="eyebrow">Rutina activa</p>
+            <p className="mt-1 font-display text-2xl font-extrabold uppercase">{active.name}</p>
+            <p className="text-sm text-muted">
+              {active.weeks} {active.weeks === 1 ? "semana" : "semanas"}
+              {lastDate ? ` · último registro ${formatDate(lastDate)}` : " · sin registros todavía"}
+            </p>
+          </div>
+          <Link href={`/coach/rutinas/${active.id}`} className={buttonClass("primary", "md")}>Abrir rutina</Link>
+        </Card>
+      ) : (
+        <Card className="px-5 py-4 text-sm text-muted">Este cliente no tiene una rutina activa. Creá una o activá un borrador.</Card>
+      )}
+      <h2 className="font-display text-2xl font-extrabold uppercase tracking-tight">Rutinas</h2>
+      <NewWorkoutForm clientId={id} templates={templates.map((t) => ({ id: t.id, name: t.name, weeks: t.weeks }))} />
+      <WorkoutList plans={plans} empty="Todavía no hay rutinas para este cliente." />
+      <h2 className="mt-2 font-display text-2xl font-extrabold uppercase tracking-tight">Progresión de cargas</h2>
+      <ProgressionView logs={logs} exercises={exercises} empty="El cliente todavía no registró cargas." />
     </div>
   );
 }

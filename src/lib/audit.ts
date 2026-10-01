@@ -54,7 +54,7 @@ const FIELD: Record<string, { label: string; unit?: string }> = {
   frequency: { label: "Frecuencia" },
 };
 
-const HIDDEN = new Set(["client_id", "coach_id", "created_by", "extra", "calculation", "adherence_score", "reviewed_at", "submitted_at", "stripe_customer_id", "stripe_subscription_id", "plan_id", "position"]);
+const HIDDEN = new Set(["client_id", "coach_id", "created_by", "extra", "calculation", "adherence_score", "reviewed_at", "submitted_at", "stripe_customer_id", "stripe_subscription_id", "plan_id", "position", "periodization"]);
 
 const VALUE_TEXT: Record<string, string> = {
   active: "activo", suspended: "suspendido", male: "masculino", female: "femenino", other: "otro",
@@ -85,7 +85,7 @@ export function describeAudit(row: AuditRow) {
   const who = row.actor_name || "Sistema";
   const ent = ENTITY[row.entity]?.label ?? row.entity;
   if (row.action === "insert") {
-    const named = row.entity === "nutrition_plans" || row.entity === "plan_supplements" || row.entity === "nutrition_day_types";
+    const named = row.entity === "nutrition_plans" || row.entity === "workout_plans" || row.entity === "plan_supplements" || row.entity === "nutrition_day_types";
     const n = named && row.changes.name?.new ? ` "${String(row.changes.name.new)}"` : "";
     const verb = row.entity === "plan_supplements" ? "pautó" : "creó";
     return { title: `${who} ${verb} ${ent}${n}`, details: [] as string[] };
