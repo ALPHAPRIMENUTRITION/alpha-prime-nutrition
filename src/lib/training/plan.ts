@@ -53,7 +53,7 @@ export interface WorkoutTree extends WorkoutMeta {
 }
 
 export const MUSCLE_GROUPS = [
-  "Pecho", "Espalda", "Hombros", "Bíceps", "Tríceps", "Cuádriceps", "Isquiotibiales", "Glúteos", "Pantorrillas", "Core", "Cardio", "Otro",
+  "Pecho", "Espalda", "Hombros", "Bíceps", "Tríceps", "Cuádriceps", "Isquiotibiales", "Glúteos", "Aductores", "Pantorrillas", "Core", "Cardio", "Otro",
 ];
 export const EQUIPMENT = ["Barra", "Mancuernas", "Máquina", "Polea", "Peso corporal", "Kettlebell", "Banda", "Otro"];
 
