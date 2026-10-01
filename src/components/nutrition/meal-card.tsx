@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ArrowDown, ArrowUp, Copy, MoreHorizontal, Pencil, Plus, Repeat, StickyNote, Trash2, X } from "lucide-react";
 import {
   formatQty,
@@ -14,6 +14,7 @@ import {
 import { Input, Textarea } from "@/components/ui";
 import { ConfirmButton } from "@/components/confirm-button";
 import { FoodPicker } from "@/components/nutrition/food-picker";
+import { findEquivalents } from "@/lib/nutrition/equivalents";
 import { cn } from "@/lib/cn";
 
 export interface MealHandlers {
@@ -275,6 +276,8 @@ function ItemRow({ item, food, foods, foodMap, h }: { item: PlanItem; food: Food
           ) : (
             <p className="text-sm text-faint">Sin sustituciones. Agregá alternativas equivalentes para dar flexibilidad.</p>
           )}
+          {food && <Equivalents food={food} quantity={Number(qty.replace(",", ".")) || 0} foods={foods} exclude={item.subs.map((s) => s.food_id)} onAdd={(f, q) => h.addSub(item.id, f, q, "")} />}
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">O elegí otro alimento</p>
           <FoodPicker
             idPrefix={`sub_${item.id}`}
             foods={foods}
@@ -286,5 +289,68 @@ function ItemRow({ item, food, foods, foodMap, h }: { item: PlanItem; food: Food
         </div>
       )}
     </li>
+  );
+}
+
+/** Sugerencias de sustitución calculadas por equivalencia de macros. */
+function Equivalents({
+  food,
+  quantity,
+  foods,
+  exclude,
+  onAdd,
+}: {
+  food: Food;
+  quantity: number;
+  foods: Food[];
+  exclude: string[];
+  onAdd: (f: Food, q: number) => Promise<boolean>;
+}) {
+  const [busy, setBusy] = useState<string | null>(null);
+  const list = useMemo(
+    () => (quantity > 0 ? findEquivalents(food, quantity, foods.filter((f) => !exclude.includes(f.id))) : []),
+    [food, quantity, foods, exclude.join(",")], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">
+        Equivalentes sugeridos para {formatQty(quantity, food.unit)}
+      </p>
+      {list.length === 0 ? (
+        <p className="text-sm text-faint">No hay equivalentes cercanos en tu catálogo. Podés agregar uno a mano.</p>
+      ) : (
+        <ul className="flex flex-col divide-y divide-line rounded-lg border border-line">
+          {list.map((e) => (
+            <li key={e.food.id} className="flex items-center gap-3 px-3 py-2">
+              <span
+                className={cn("tnum w-11 shrink-0 rounded-full px-1.5 py-0.5 text-center text-[11px] font-bold", e.match >= 85 ? "bg-ok/15 text-ok" : e.match >= 70 ? "bg-warn/15 text-warn" : "bg-panel-2 text-muted")}
+                title="Qué tan parecido es en calorías y macros"
+              >
+                {e.match}%
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-medium">{formatQty(e.quantity, e.food.unit)} de {e.food.name}</span>
+                <span className="tnum block text-xs text-muted">
+                  {Math.round(e.macros.kcal)} kcal · P {m1(e.macros.protein)} · C {m1(e.macros.carbs)} · G {m1(e.macros.fat)}
+                </span>
+              </span>
+              <button
+                type="button"
+                disabled={busy !== null}
+                onClick={async () => {
+                  setBusy(e.food.id);
+                  await onAdd(e.food, e.quantity);
+                  setBusy(null);
+                }}
+                className="inline-flex shrink-0 items-center gap-1 rounded-full border border-line px-2.5 py-1 text-xs font-semibold text-fg hover:border-faint disabled:opacity-50"
+              >
+                <Plus size={13} /> {busy === e.food.id ? "…" : "Agregar"}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="text-[11px] text-faint">Calculado igualando el macro principal y comparando calorías. Es una sugerencia: revisala.</p>
+    </div>
   );
 }
