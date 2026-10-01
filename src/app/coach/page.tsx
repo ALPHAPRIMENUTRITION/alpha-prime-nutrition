@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Plus } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { getDashboardStats, listClients, overdueClients, recentNotifications, upcomingRenewals } from "@/lib/data/coach";
 import { isClientFilter, CLIENT_FILTERS } from "@/lib/client-filters";
@@ -46,6 +47,9 @@ export default async function CoachDashboard({ searchParams }: { searchParams: P
             Panel del coach
           </h1>
         </div>
+        <Link href="/coach/clientes/nuevo" className={buttonClass("primary", "md", "uppercase tracking-[0.08em]")}>
+          <Plus size={18} /> Nuevo cliente
+        </Link>
       </header>
 
       {/* Métricas */}
@@ -160,7 +164,11 @@ export default async function CoachDashboard({ searchParams }: { searchParams: P
                   <Link href="/coach#clientes" className={buttonClass("secondary", "sm")}>
                     Quitar filtros
                   </Link>
-                ) : undefined
+                ) : (
+                  <Link href="/coach/clientes/nuevo" className={buttonClass("primary", "sm")}>
+                    Agregar el primero
+                  </Link>
+                )
               }
             />
           </Card>

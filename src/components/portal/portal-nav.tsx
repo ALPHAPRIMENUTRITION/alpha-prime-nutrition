@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, CreditCard } from "lucide-react";
+import { Home, CreditCard, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/cn";
 
-// Las secciones Nutrición, Entrenamiento, Progreso y Check-in se suman en las siguientes fases.
+// Nutrición, Entrenamiento y Check-in se suman en las siguientes fases.
 const ITEMS = [
   { label: "Inicio", href: "/portal", icon: Home },
+  { label: "Progreso", href: "/portal/progreso", icon: TrendingUp },
   { label: "Membresía", href: "/portal/membresia", icon: CreditCard },
 ];
 

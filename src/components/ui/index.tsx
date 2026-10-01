@@ -58,6 +58,19 @@ export function Input({ className, ...props }: React.InputHTMLAttributes<HTMLInp
   );
 }
 
+export function Textarea({ className, ...props }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  return (
+    <textarea
+      className={cn(
+        "min-h-24 w-full rounded-xl border border-line bg-graphite px-3.5 py-2.5 text-[15px] text-fg placeholder:text-faint",
+        "focus:border-red focus:outline-none",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
 export function Select({ className, ...props }: React.SelectHTMLAttributes<HTMLSelectElement>) {
   return (
     <select

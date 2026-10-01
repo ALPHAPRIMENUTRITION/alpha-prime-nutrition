@@ -2,7 +2,15 @@
 
 Plataforma de coaching nutricional y entrenamiento con dos roles: **COACH** y **CLIENTE**.
 
-**Estado: Fase 1 completa** — arquitectura, base de datos, autenticación, roles y dashboards.
+**Estado: Fases 1 y 2 completas.**
+- Fase 1: arquitectura, base de datos, autenticación, roles y dashboards.
+- Fase 2: alta/edición/suspensión de clientes, acceso por link (WhatsApp), expediente con antropometría, progreso (gráficas, antes vs actual, fotos), notas privadas, historial de cambios, y sección Progreso en el portal del cliente.
+
+### Acceso de clientes (Fase 2)
+Al crear un cliente se genera un **link de acceso** para compartir por WhatsApp; con él crea su contraseña en `/auth/aceptar`.
+No depende del correo de Supabase (que sin SMTP propio solo envía a miembros del equipo). Requisitos:
+- `SUPABASE_SERVICE_ROLE_KEY` configurada en Netlify (solo servidor).
+- Supabase → Authentication → URL Configuration → **Redirect URLs**: agregar `https://TU-DOMINIO/**`.
 
 | Stack | Por qué |
 |---|---|

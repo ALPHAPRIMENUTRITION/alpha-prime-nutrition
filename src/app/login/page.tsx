@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
 import { LoginForm } from "./login-form";
+import { AuthHashRedirect } from "@/components/auth-hash-redirect";
 
 export const metadata: Metadata = { title: "Entrar" };
 
@@ -23,7 +24,11 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <span className="text-red">Tu progreso.</span>
         </h1>
         <p className="mb-8 mt-3 text-sm text-muted">Entrá con la cuenta que te dio tu coach.</p>
+        <AuthHashRedirect />
         <LoginForm next={next} />
+        <Link href="/recuperar" className="mt-4 inline-block text-sm text-muted underline underline-offset-4 hover:text-fg">
+          ¿Olvidaste tu contraseña?
+        </Link>
         <p className="mt-8 text-xs text-faint">
           Al entrar aceptás los{" "}
           <Link href="/terminos" className="underline underline-offset-2 hover:text-fg">
