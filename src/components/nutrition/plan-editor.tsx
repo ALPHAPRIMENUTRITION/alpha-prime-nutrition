@@ -15,6 +15,7 @@ import { MacroSummary } from "@/components/nutrition/macro-summary";
 import { MealCard, type MealHandlers } from "@/components/nutrition/meal-card";
 import { NutritionCalculator, describeCalculation, type CalcDefaults } from "@/components/nutrition/calculator";
 import { DayTargets } from "@/components/nutrition/day-targets";
+import { SupplementsEditor, type SupplementHandlers } from "@/components/nutrition/supplements-editor";
 import { cn } from "@/lib/cn";
 
 const QUICK_MEALS = ["Desayuno", "Merienda AM", "Almuerzo", "Merienda PM", "Cena", "Pre-entreno", "Post-entreno"];
@@ -146,6 +147,17 @@ export function PlanEditor({
     foodCreated: (f) => setFoods((list) => [...list, f]),
   };
 
+  const sh: SupplementHandlers = {
+    save: async (id, input) => {
+      await flush();
+      const res = await A.saveSupplementAction(plan.id, id, input);
+      if (res.ok) setToast({ text: id ? "Suplemento actualizado" : "Suplemento agregado" });
+      return res.ok ? { ok: true } : { ok: false, error: res.error, fields: res.fields };
+    },
+    move: (id, dir) => run(() => A.moveSupplementAction(plan.id, id, dir)),
+    remove: (id) => run(() => A.deleteSupplementAction(plan.id, id), "Suplemento eliminado"),
+  };
+
   const dayHasMeals = (w: number, d: number) => (tree.days.find((x) => x.week_number === w && x.day_number === d)?.meals.length ?? 0) > 0;
 
   return (
@@ -272,6 +284,8 @@ export function PlanEditor({
 
         <AddMeal disabled={busy} onAdd={(name) => run(() => A.addMealAction(plan.id, week, day, name))} />
       </section>
+
+      <SupplementsEditor items={tree.supplements} h={sh} disabled={busy} />
 
       {tree.notes && (
         <Card className="p-5">

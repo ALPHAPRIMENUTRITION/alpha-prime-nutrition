@@ -49,3 +49,11 @@ export const foodSchema = z.object({
 
 export const quantitySchema = z.number().gt(0, "La cantidad debe ser mayor a 0").max(10000, "Cantidad demasiado grande");
 export const shortText = (max: number) => z.string().trim().min(1, "No puede quedar vacío").max(max);
+
+export const supplementSchema = z.object({
+  name: z.string().trim().min(1, "Escribí el suplemento").max(120, "Máximo 120 caracteres"),
+  dose: z.preprocess(blank, z.string().trim().max(60, "Máximo 60 caracteres").optional()),
+  timing: z.preprocess(blank, z.string().trim().max(60, "Máximo 60 caracteres").optional()),
+  frequency: z.preprocess(blank, z.string().trim().max(60, "Máximo 60 caracteres").optional()),
+  notes: z.preprocess(blank, z.string().trim().max(500, "Máximo 500 caracteres").optional()),
+});

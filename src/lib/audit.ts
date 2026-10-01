@@ -10,6 +10,7 @@ const ENTITY: Record<string, { label: string; article: string }> = {
   workout_plans: { label: "la rutina", article: "" },
   subscriptions: { label: "la membresía", article: "" },
   checkins: { label: "un check-in", article: "" },
+  plan_supplements: { label: "un suplemento", article: "" },
 };
 
 const FIELD: Record<string, { label: string; unit?: string }> = {
@@ -47,9 +48,12 @@ const FIELD: Record<string, { label: string; unit?: string }> = {
   weeks: { label: "Semanas" },
   is_active: { label: "Plan activo" },
   notes: { label: "Notas" },
+  dose: { label: "Dosis" },
+  timing: { label: "Momento" },
+  frequency: { label: "Frecuencia" },
 };
 
-const HIDDEN = new Set(["client_id", "coach_id", "created_by", "extra", "calculation", "adherence_score", "reviewed_at", "submitted_at", "stripe_customer_id", "stripe_subscription_id"]);
+const HIDDEN = new Set(["client_id", "coach_id", "created_by", "extra", "calculation", "adherence_score", "reviewed_at", "submitted_at", "stripe_customer_id", "stripe_subscription_id", "plan_id", "position"]);
 
 const VALUE_TEXT: Record<string, string> = {
   active: "activo", suspended: "suspendido", male: "masculino", female: "femenino", other: "otro",
@@ -80,10 +84,15 @@ export function describeAudit(row: AuditRow) {
   const who = row.actor_name || "Sistema";
   const ent = ENTITY[row.entity]?.label ?? row.entity;
   if (row.action === "insert") {
-    const n = row.entity === "nutrition_plans" && row.changes.name?.new ? ` "${String(row.changes.name.new)}"` : "";
-    return { title: `${who} creó ${ent}${n}`, details: [] as string[] };
+    const named = row.entity === "nutrition_plans" || row.entity === "plan_supplements";
+    const n = named && row.changes.name?.new ? ` "${String(row.changes.name.new)}"` : "";
+    const verb = row.entity === "plan_supplements" ? "pautó" : "creó";
+    return { title: `${who} ${verb} ${ent}${n}`, details: [] as string[] };
   }
-  if (row.action === "delete") return { title: `${who} eliminó ${ent}`, details: [] as string[] };
+  if (row.action === "delete") {
+    const n = row.entity === "plan_supplements" && row.changes.name?.old ? ` "${String(row.changes.name.old)}"` : "";
+    return { title: `${who} eliminó ${ent}${n}`, details: [] as string[] };
+  }
 
   const details = Object.entries(row.changes)
     .filter(([k]) => !HIDDEN.has(k))

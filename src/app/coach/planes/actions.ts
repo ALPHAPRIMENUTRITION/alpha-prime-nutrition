@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { fieldErrors } from "@/lib/validation/client";
-import { foodSchema, planMetaSchema, quantitySchema, shortText, targetsSchema, uuid } from "@/lib/validation/nutrition";
+import { foodSchema, planMetaSchema, quantitySchema, shortText, supplementSchema, targetsSchema, uuid } from "@/lib/validation/nutrition";
 import type { Food } from "@/lib/nutrition/plan";
 import { z } from "zod";
 
@@ -386,6 +386,61 @@ export async function deleteSubstitutionAction(planId: string, subId: string): P
   if (!(await guard(planId)) || !uuid.safeParse(subId).success) return fail("Sustitución inválida.");
   const supabase = await createClient();
   await supabase.from("food_substitutions").delete().eq("id", subId);
+  await touch(planId);
+  return { ok: true };
+}
+
+// ---------------------------------------------------------------- Suplementación
+
+export async function saveSupplementAction(
+  planId: string,
+  supplementId: string | null,
+  input: Record<string, string>,
+): Promise<ActionResult & { fields?: Record<string, string> }> {
+  if (!(await guard(planId)) || (supplementId && !uuid.safeParse(supplementId).success)) return fail("Suplemento inválido.");
+  const parsed = supplementSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Revisá los campos marcados.", fields: fieldErrors(parsed.error) };
+  const row = {
+    name: parsed.data.name,
+    dose: parsed.data.dose ?? null,
+    timing: parsed.data.timing ?? null,
+    frequency: parsed.data.frequency ?? null,
+    notes: parsed.data.notes ?? null,
+  };
+  const supabase = await createClient();
+  if (supplementId) {
+    const { data, error } = await supabase.from("plan_supplements").update(row).eq("id", supplementId).eq("plan_id", planId).select("id");
+    if (error || !data?.length) return fail("No se pudo guardar el suplemento.");
+  } else {
+    const { count } = await supabase.from("plan_supplements").select("id", { count: "exact", head: true }).eq("plan_id", planId);
+    if ((count ?? 0) >= 30) return fail("Máximo 30 suplementos por plan.");
+    const { error } = await supabase.from("plan_supplements").insert({ ...row, plan_id: planId, position: count ?? 0 });
+    if (error) return fail("No se pudo agregar el suplemento.");
+  }
+  await touch(planId);
+  return { ok: true };
+}
+
+export async function moveSupplementAction(planId: string, supplementId: string, dir: -1 | 1): Promise<ActionResult> {
+  if (!(await guard(planId)) || !uuid.safeParse(supplementId).success) return fail("Suplemento inválido.");
+  const supabase = await createClient();
+  const { data } = await supabase.from("plan_supplements").select("id").eq("plan_id", planId).order("position").order("created_at");
+  const ids = (data ?? []).map((r) => r.id as string);
+  const i = ids.indexOf(supplementId);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= ids.length) return { ok: true };
+  const tmp = ids[i]!;
+  ids[i] = ids[j]!;
+  ids[j] = tmp;
+  await Promise.all(ids.map((id, position) => supabase.from("plan_supplements").update({ position }).eq("id", id)));
+  await touch(planId);
+  return { ok: true };
+}
+
+export async function deleteSupplementAction(planId: string, supplementId: string): Promise<ActionResult> {
+  if (!(await guard(planId)) || !uuid.safeParse(supplementId).success) return fail("Suplemento inválido.");
+  const supabase = await createClient();
+  await supabase.from("plan_supplements").delete().eq("id", supplementId).eq("plan_id", planId);
   await touch(planId);
   return { ok: true };
 }

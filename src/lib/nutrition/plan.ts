@@ -85,9 +85,36 @@ export interface PlanMeta {
   updated_at: string;
 }
 
+export interface PlanSupplement {
+  id: string;
+  name: string;
+  dose: string | null;
+  timing: string | null;
+  frequency: string | null;
+  notes: string | null;
+  position: number;
+}
+
 export interface PlanTree extends PlanMeta {
   days: PlanDay[];
+  supplements: PlanSupplement[];
 }
+
+/** Línea corta: "5 g · Post-entreno · Diario" */
+export function supplementLine(s: Pick<PlanSupplement, "dose" | "timing" | "frequency">) {
+  return [s.dose, s.timing, s.frequency].filter(Boolean).join(" · ");
+}
+
+/** Sugerencias para el formulario (el coach puede escribir cualquier otra). */
+export const SUPPLEMENT_SUGGESTIONS = [
+  "Creatina monohidratada", "Proteína whey", "Proteína vegetal", "Cafeína", "Multivitamínico",
+  "Omega-3 (EPA/DHA)", "Vitamina D3", "Magnesio", "Electrolitos", "Beta-alanina", "Hierro", "Zinc",
+];
+export const SUPPLEMENT_TIMINGS = [
+  "Al despertar", "En ayunas", "Con el desayuno", "Pre-entreno", "Durante el entreno", "Post-entreno",
+  "Con el almuerzo", "Con la cena", "Antes de dormir",
+];
+export const SUPPLEMENT_FREQUENCIES = ["Diario", "Días de entreno", "Días de descanso", "Lunes a viernes"];
 
 export function optionMacros(opt: PlanOption | undefined, foods: Map<string, Food>) {
   return sumMacros((opt?.items ?? []).map((i) => itemMacros(foods.get(i.food_id), Number(i.quantity))));
@@ -141,6 +168,10 @@ export function toPlanTree(raw: any): PlanTree {
       .sort(byPos),
   }));
   days.sort((a, b) => a.week_number - b.week_number || a.day_number - b.day_number);
-  const { nutrition_plan_days: _ignored, ...meta } = raw;
-  return { ...(meta as PlanMeta), days };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const supplements: PlanSupplement[] = [...(raw.plan_supplements ?? [])].sort((a: any, b: any) => a.position - b.position || String(a.created_at).localeCompare(String(b.created_at)))
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .map((s: any) => ({ id: s.id, name: s.name, dose: s.dose, timing: s.timing, frequency: s.frequency, notes: s.notes, position: s.position }));
+  const { nutrition_plan_days: _ignored, plan_supplements: _ignored2, ...meta } = raw;
+  return { ...(meta as PlanMeta), days, supplements };
 }

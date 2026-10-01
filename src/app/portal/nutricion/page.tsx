@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { RefreshCw } from "lucide-react";
+import { Pill, RefreshCw } from "lucide-react";
 import { getPortalContext } from "@/lib/data/portal";
 import { currentPlanWeek, getActivePlanForClient, isoWeekday } from "@/lib/data/nutrition";
-import { DAY_NAMES, DAY_SHORT, dayMacros, formatQty, itemMacros, optionMacros, type Food } from "@/lib/nutrition/plan";
+import { DAY_NAMES, DAY_SHORT, dayMacros, formatQty, itemMacros, optionMacros, supplementLine, type Food } from "@/lib/nutrition/plan";
 import { todayISO } from "@/lib/format";
 import { Card, EmptyState } from "@/components/ui";
 import { MembershipLocked } from "@/components/portal/membership-locked";
@@ -165,6 +165,26 @@ export default async function PortalNutrition({ searchParams }: { searchParams: 
         ))
       ) : (
         <Card><EmptyState title="Día libre de plan" description="Este día no tiene comidas asignadas. Consultá con tu coach si tenés dudas." /></Card>
+      )}
+
+      {tree.supplements.length > 0 && (
+        <section aria-labelledby="supp-title" className="overflow-hidden rounded-card border border-line bg-panel">
+          <header className="border-b border-line px-4 py-3">
+            <h2 id="supp-title" className="font-display text-xl font-extrabold uppercase tracking-tight">Suplementación</h2>
+          </header>
+          <ul className="divide-y divide-line">
+            {tree.supplements.map((s) => (
+              <li key={s.id} className="flex items-start gap-3 px-4 py-3">
+                <Pill size={18} className="mt-0.5 shrink-0 text-red" aria-hidden="true" />
+                <div className="min-w-0">
+                  <p className="text-[15px] font-medium">{s.name}</p>
+                  {supplementLine(s) && <p className="text-sm text-muted">{supplementLine(s)}</p>}
+                  {s.notes && <p className="mt-0.5 whitespace-pre-wrap text-xs text-faint">{s.notes}</p>}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
 
       {tree.notes && (
