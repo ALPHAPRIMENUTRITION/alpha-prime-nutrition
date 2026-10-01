@@ -414,12 +414,14 @@ export async function saveDayTypeAction(
   typeId: string | null,
   input: Record<string, string>,
   applyTo: number[],
+  removeFrom: number[] = [],
 ): Promise<ActionResult<string> & { fields?: Record<string, string> }> {
   if (!(await guard(planId)) || (typeId && !uuid.safeParse(typeId).success)) return fail("Tipo de día inválido.");
   const parsed = dayTypeSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Revisá los campos marcados.", fields: fieldErrors(parsed.error) };
   const days = weekdays.safeParse(applyTo);
-  if (!days.success) return fail("Días inválidos.");
+  const removed = weekdays.safeParse(removeFrom);
+  if (!days.success || !removed.success) return fail("Días inválidos.");
   const supabase = await createClient();
   let id = typeId;
   if (typeId) {
@@ -437,6 +439,16 @@ export async function saveDayTypeAction(
   if (days.data.length) {
     const { error } = await supabase.rpc("nutrition_assign_day_type", { p_plan: planId, p_type: id, p_days: days.data });
     if (error) return fail("Se guardó el tipo, pero no se pudo asignar a los días.");
+  }
+  if (typeId && removed.data.length) {
+    // Los días desmarcados vuelven al objetivo general (solo los que tenían ESTE tipo).
+    const { error } = await supabase
+      .from("nutrition_plan_days")
+      .update({ day_type_id: null })
+      .eq("plan_id", planId)
+      .eq("day_type_id", typeId)
+      .in("day_number", removed.data);
+    if (error) return fail("Se guardó el tipo, pero no se pudieron quitar los días desmarcados.");
   }
   await touch(planId);
   return { ok: true, data: id! };

@@ -11,7 +11,7 @@ import { cn } from "@/lib/cn";
 
 type Targets = { target_kcal: number | null; target_protein_g: number | null; target_carbs_g: number | null; target_fat_g: number | null };
 export interface DayTypeHandlers {
-  save: (id: string | null, input: Record<string, string>, applyTo: number[]) => Promise<{ ok: boolean; error?: string; fields?: Record<string, string> }>;
+  save: (id: string | null, input: Record<string, string>, applyTo: number[], removeFrom: number[]) => Promise<{ ok: boolean; error?: string; fields?: Record<string, string> }>;
   remove: (id: string) => Promise<boolean>;
 }
 
@@ -78,8 +78,8 @@ export function DayTypesCard({ plan, days, weeks, h, disabled }: { plan: Targets
             defaults={plan}
             initialDays={editing === "new" ? [] : weekdaysWithType(days, weeks, editing.id)}
             weeks={weeks}
-            onSave={async (input, applyTo) => {
-              const res = await h.save(editing === "new" ? null : editing.id, input, applyTo);
+            onSave={async (input, applyTo, removeFrom) => {
+              const res = await h.save(editing === "new" ? null : editing.id, input, applyTo, removeFrom);
               if (res.ok) setEditing(null);
               return res;
             }}
@@ -103,7 +103,7 @@ function DayTypeForm({
   defaults: Targets;
   initialDays: number[];
   weeks: number;
-  onSave: (input: Record<string, string>, applyTo: number[]) => Promise<{ ok: boolean; error?: string; fields?: Record<string, string> }>;
+  onSave: (input: Record<string, string>, applyTo: number[], removeFrom: number[]) => Promise<{ ok: boolean; error?: string; fields?: Record<string, string> }>;
   onDelete?: () => Promise<void>;
 }) {
   const src = initial ?? defaults;
@@ -121,6 +121,7 @@ function DayTypeForm({
   const set = (k: keyof typeof v) => (e: React.ChangeEvent<HTMLInputElement>) => setV((x) => ({ ...x, [k]: e.target.value }));
   const fromMacros = Math.round(4 * (Number(v.target_protein_g) || 0) + 4 * (Number(v.target_carbs_g) || 0) + 9 * (Number(v.target_fat_g) || 0));
   const newDays = days.filter((d) => !initialDays.includes(d));
+  const removedDays = initialDays.filter((d) => !days.includes(d));
 
   return (
     <form
@@ -129,7 +130,7 @@ function DayTypeForm({
       onSubmit={(e) => {
         e.preventDefault();
         start(async () => {
-          const res = await onSave(v, newDays);
+          const res = await onSave(v, newDays, removedDays);
           if (!res.ok) setErrors({ error: res.error, fields: res.fields });
         });
       }}
@@ -186,7 +187,7 @@ function DayTypeForm({
             );
           })}
         </div>
-        <p className="text-xs text-faint">Las comidas de cada día no cambian; solo su objetivo. Para quitar el tipo de un día, cambialo desde el día.</p>
+        <p className="text-xs text-faint">Marcá o desmarcá días. Los que desmarques vuelven al objetivo General. Las comidas no cambian; solo el objetivo de cada día.</p>
       </fieldset>
 
       {errors.error && !errors.fields && <p role="alert" className="text-sm text-bad">{errors.error}</p>}

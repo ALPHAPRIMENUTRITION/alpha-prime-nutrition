@@ -169,9 +169,9 @@ export function PlanEditor({
   };
 
   const dth: DayTypeHandlers = {
-    save: async (id, input, applyTo) => {
+    save: async (id, input, applyTo, removeFrom) => {
       await flush();
-      const res = await A.saveDayTypeAction(plan.id, id, input, applyTo);
+      const res = await A.saveDayTypeAction(plan.id, id, input, applyTo, removeFrom);
       if (res.ok) setToast({ text: id ? "Tipo de día actualizado" : "Tipo de día creado" });
       return res.ok ? { ok: true } : { ok: false, error: res.error, fields: res.fields };
     },
