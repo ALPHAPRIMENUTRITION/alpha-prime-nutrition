@@ -11,6 +11,7 @@ import { StatCard } from "@/components/ui/stat-card";
 import { Badge, Card, EmptyState, buttonClass } from "@/components/ui";
 import { ClientFilters } from "@/components/coach/client-filters";
 import { ClientTable } from "@/components/coach/client-table";
+import { InstallPrompt } from "@/components/pwa/install-prompt";
 
 export const metadata: Metadata = { title: "Panel del coach" };
 
@@ -51,6 +52,8 @@ export default async function CoachDashboard({ searchParams }: { searchParams: P
           <Plus size={18} /> Nuevo cliente
         </Link>
       </header>
+
+      <InstallPrompt audience="coach" />
 
       {/* Métricas */}
       <section aria-label="Resumen" className="grid grid-cols-2 gap-3 sm:grid-cols-4">

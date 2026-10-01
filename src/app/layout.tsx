@@ -3,12 +3,17 @@ import "@fontsource/big-shoulders-display/700";
 import "@fontsource/big-shoulders-display/800";
 import "@fontsource-variable/archivo";
 import "./globals.css";
+import { ServiceWorkerRegister } from "@/components/pwa/sw-register";
 
 export const metadata: Metadata = {
   title: { default: "Alpha Prime Nutrition", template: "%s · Alpha Prime" },
   description: "Coaching nutricional y de entrenamiento personalizado. Unleash your power.",
   applicationName: "Alpha Prime Nutrition",
   robots: { index: false, follow: false }, // plataforma privada
+  // Experiencia de app al instalarla en iPhone (Compartir → Agregar a inicio)
+  appleWebApp: { capable: true, title: "Alpha Prime", statusBarStyle: "black-translucent" },
+  icons: { icon: [{ url: "/icon.svg", type: "image/svg+xml" }, { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }], apple: "/icons/apple-touch-icon.png" },
+  formatDetection: { telephone: false },
 };
 
 export const viewport: Viewport = {
@@ -21,7 +26,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es">
-      <body className="min-h-dvh">{children}</body>
+      <body className="min-h-dvh">
+        {children}
+        <ServiceWorkerRegister />
+      </body>
     </html>
   );
 }

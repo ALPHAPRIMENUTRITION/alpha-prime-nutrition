@@ -35,6 +35,7 @@ body {
 }
 
 body {
+  -webkit-tap-highlight-color: transparent;
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -67,4 +68,10 @@ h1, h2, h3 {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* Instalada como app: sin rebote de la página ni menú al mantener presionado en la navegación */
+@media (display-mode: standalone) {
+  html, body { overscroll-behavior-y: none; }
+  nav a, button { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 }

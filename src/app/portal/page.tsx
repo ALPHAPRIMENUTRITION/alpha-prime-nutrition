@@ -9,6 +9,7 @@ import { MEMBERSHIP_LABEL, MEMBERSHIP_TONE } from "@/lib/membership";
 import { Badge, Card, EmptyState } from "@/components/ui";
 import { MembershipLocked } from "@/components/portal/membership-locked";
 import { MembershipWarning } from "@/components/portal/membership-warning";
+import { InstallPrompt } from "@/components/pwa/install-prompt";
 
 export const metadata: Metadata = { title: "Inicio" };
 
@@ -55,6 +56,7 @@ export default async function PortalHome() {
   return (
     <div className="flex flex-col gap-5">
       <MembershipWarning status={membership} />
+      <InstallPrompt />
 
       <section>
         <p className="eyebrow">Semana {programWeek(client.start_date)} del programa</p>
