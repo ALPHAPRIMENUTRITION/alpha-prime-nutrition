@@ -61,18 +61,29 @@ export async function getActiveWorkoutForClient(clientId: string) {
   return { tree, exercises };
 }
 
-/** Registros de cargas de un cliente (más recientes primero). RLS filtra. */
-export async function getClientLogs(clientId: string, limit = 2000): Promise<LogRow[]> {
+/**
+ * TODOS los registros de cargas de un cliente (más recientes primero). RLS filtra.
+ * Supabase devuelve como máximo 1.000 filas por consulta, así que se pide por páginas
+ * para que el historial completo del proceso siga visible con los años.
+ */
+export async function getClientLogs(clientId: string, max = 50_000): Promise<LogRow[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("workout_logs")
-    .select("id, workout_exercise_id, exercise_id, performed_at, set_number, weight_kg, reps, rir, rpe, comment")
-    .eq("client_id", clientId)
-    .order("performed_at", { ascending: false })
-    .order("set_number")
-    .limit(limit);
-  if (error) throw new Error("No se pudieron cargar los registros.");
-  return (data ?? []).map((r) => ({
+  const PAGE = 1000;
+  const data: Record<string, unknown>[] = [];
+  for (let from = 0; from < max; from += PAGE) {
+    const { data: page, error } = await supabase
+      .from("workout_logs")
+      .select("id, workout_exercise_id, exercise_id, performed_at, set_number, weight_kg, reps, rir, rpe, comment")
+      .eq("client_id", clientId)
+      .order("performed_at", { ascending: false })
+      .order("id")
+      .range(from, from + PAGE - 1);
+    if (error) throw new Error("No se pudieron cargar los registros.");
+    data.push(...(page ?? []));
+    if (!page || page.length < PAGE) break;
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data as any[]).map((r) => ({
     ...r,
     weight_kg: r.weight_kg == null ? null : Number(r.weight_kg),
     rir: r.rir == null ? null : Number(r.rir),
