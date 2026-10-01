@@ -99,7 +99,7 @@ export function MealCard({
               <MenuBtn icon={ArrowDown} label="Bajar" disabled={index === total - 1} onClick={() => { h.move(meal.id, 1); setMenu(false); }} />
               <MenuBtn icon={StickyNote} label={showNotes ? "Ocultar nota" : "Agregar nota"} onClick={() => { setShowNotes((v) => !v); setMenu(false); }} />
               <div className="px-1 py-1">
-                <ConfirmButton action={() => h.remove(meal.id)} label={<><Trash2 size={15} /> Eliminar comida</>} confirmText="¿Eliminar?" confirmLabel="Sí" size="xs" />
+                <ConfirmButton action={() => h.remove(meal.id)} label={<><Trash2 size={15} /> Eliminar comida</>} confirmText={`¿Eliminar la comida "${meal.name}" de este día, con todas sus opciones?`} confirmLabel="Sí, eliminar comida" size="xs" />
               </div>
             </div>
           )}
@@ -155,7 +155,7 @@ export function MealCard({
                 <Pencil size={12} /> Renombrar
               </button>
             )}
-            <ConfirmButton action={() => h.removeOption(opt.id).then(() => setOptIdx(0))} label={<><X size={13} /> Quitar {opt.label}</>} confirmText="¿Quitar opción?" confirmLabel="Sí" size="xs" />
+            <ConfirmButton action={() => h.removeOption(opt.id).then(() => setOptIdx(0))} label={<><X size={13} /> Quitar {opt.label}</>} confirmText={`¿Quitar ${opt.label} y sus alimentos? Las demás opciones quedan.`} confirmLabel={`Sí, quitar ${opt.label}`} size="xs" />
           </span>
         )}
       </div>

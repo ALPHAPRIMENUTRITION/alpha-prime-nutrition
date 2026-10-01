@@ -137,3 +137,34 @@ export interface CalculationSnapshot {
   overridden: boolean;
   calculated_at: string;
 }
+
+export type MacroKey = "protein" | "carbs" | "fat";
+export const KCAL_PER_G: Record<MacroKey, number> = { protein: 4, carbs: 4, fat: 9 };
+
+/**
+ * Cambia las calorías manteniendo fijos los macros elegidos.
+ * Los macros libres se escalan en la misma proporción (conservan su
+ * relación entre sí) hasta que la suma de todos dé las calorías nuevas.
+ */
+export function rebalanceMacros(
+  current: Record<MacroKey, number>,
+  newKcal: number,
+  keep: Record<MacroKey, boolean>,
+): { ok: true; macros: Record<MacroKey, number> } | { ok: false; error: string } {
+  const keys: MacroKey[] = ["protein", "carbs", "fat"];
+  const free = keys.filter((k) => !keep[k]);
+  if (!free.length) return { ok: false, error: "Dejá al menos un macro libre para absorber el cambio." };
+  const lockedKcal = keys.filter((k) => keep[k]).reduce((s, k) => s + current[k] * KCAL_PER_G[k], 0);
+  const freeNow = free.reduce((s, k) => s + current[k] * KCAL_PER_G[k], 0);
+  const freeTarget = newKcal - lockedKcal;
+  if (freeTarget < 0) return { ok: false, error: `Con lo que mantenés fijo ya sumás ${Math.round(lockedKcal)} kcal: no se puede bajar a ${Math.round(newKcal)}.` };
+  const out = { ...current };
+  if (freeNow > 0) {
+    const factor = freeTarget / freeNow;
+    for (const k of free) out[k] = current[k] * factor;
+  } else {
+    for (const k of free) out[k] = freeTarget / free.length / KCAL_PER_G[k];
+  }
+  for (const k of keys) out[k] = Math.round(out[k]);
+  return { ok: true, macros: out };
+}

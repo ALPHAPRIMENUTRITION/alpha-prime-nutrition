@@ -5,6 +5,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { DAY_SHORT, TYPE_COLORS, type PlanDay, type PlanDayType } from "@/lib/nutrition/plan";
 import { Button, Card, Field, Input } from "@/components/ui";
 import { Dialog } from "@/components/dialog";
+import { KcalRebalancer } from "@/components/nutrition/kcal-rebalancer";
 import { cn } from "@/lib/cn";
 
 
@@ -161,6 +162,11 @@ function DayTypeForm({
           </button>
         )}
       </div>
+      <KcalRebalancer
+        idPrefix="dt"
+        current={{ kcal: Number(v.target_kcal) || 0, protein: Number(v.target_protein_g) || 0, carbs: Number(v.target_carbs_g) || 0, fat: Number(v.target_fat_g) || 0 }}
+        onApply={(x) => setV((y) => ({ ...y, target_kcal: String(x.kcal), target_protein_g: String(x.protein), target_carbs_g: String(x.carbs), target_fat_g: String(x.fat) }))}
+      />
 
       <fieldset className="flex flex-col gap-2">
         <legend className="mb-2 text-sm font-medium text-muted">Asignar a{weeks > 1 ? " (en todas las semanas)" : ""}</legend>

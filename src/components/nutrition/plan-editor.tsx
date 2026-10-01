@@ -208,7 +208,6 @@ export function PlanEditor({
           <Button type="button" variant="secondary" size="sm" onClick={() => setDialog("dup")}>
             <CopyPlus size={15} /> Duplicar
           </Button>
-          <ConfirmButton action={async () => void (await A.deletePlanAction(plan.id))} label={<><Trash2 size={15} /> Eliminar</>} confirmText="Se borra el plan completo." confirmLabel="Sí, eliminar" />
         </div>
       </header>
 
@@ -503,7 +502,36 @@ function MetaForm({ plan, isTemplate, onDone }: { plan: PlanTree; isTemplate: bo
       </Field>
       {state.error && <p role="alert" className="text-sm text-bad">{state.error}</p>}
       <Button type="submit" disabled={pending}>{pending ? "Guardando…" : "Guardar"}</Button>
+      <DeletePlan planId={plan.id} planName={plan.name} />
     </form>
+  );
+}
+
+/** Zona de peligro: borrar el plan COMPLETO, con confirmación escribiendo ELIMINAR. */
+function DeletePlan({ planId, planName }: { planId: string; planName: string }) {
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState("");
+  const [pending, start] = useTransition();
+  if (!open) {
+    return (
+      <button type="button" onClick={() => setOpen(true)} className="mt-2 inline-flex items-center justify-center gap-1.5 border-t border-line pt-4 text-sm text-bad hover:underline">
+        <Trash2 size={14} /> Eliminar este plan completo
+      </button>
+    );
+  }
+  return (
+    <div className="mt-2 flex flex-col gap-3 rounded-xl border border-bad/40 bg-bad/10 p-4 text-sm">
+      <p className="font-semibold text-bad">¿Eliminar &quot;{planName}&quot; por completo?</p>
+      <p className="text-muted">Se borran TODAS sus semanas, días, comidas, tipos de día y suplementación. <strong className="text-fg">No se puede deshacer.</strong></p>
+      <label htmlFor="del_confirm" className="text-muted">Escribí <strong className="text-fg">ELIMINAR</strong> para confirmar:</label>
+      <Input id="del_confirm" value={text} onChange={(e) => setText(e.target.value)} autoComplete="off" />
+      <div className="flex gap-2">
+        <Button type="button" size="sm" disabled={pending || text.trim().toUpperCase() !== "ELIMINAR"} onClick={() => start(async () => void (await A.deletePlanAction(planId)))}>
+          {pending ? "Eliminando…" : "Eliminar plan"}
+        </Button>
+        <Button type="button" size="sm" variant="secondary" onClick={() => { setOpen(false); setText(""); }}>Cancelar</Button>
+      </div>
+    </div>
   );
 }
 

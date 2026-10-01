@@ -13,6 +13,7 @@ import {
   type Sex,
 } from "@/lib/nutrition/calc";
 import { Button, Field, Input, Select } from "@/components/ui";
+import { KcalRebalancer } from "@/components/nutrition/kcal-rebalancer";
 import { cn } from "@/lib/cn";
 
 export interface CalcDefaults {
@@ -300,6 +301,11 @@ export function NutritionCalculator({
           Los macros suman {macroKcal.toLocaleString("es-SV")} kcal
           {n(final.kcal) ? ` (${kcalGap > 0 ? "+" : ""}${kcalGap} respecto a las calorías indicadas)` : ""}.
         </p>
+        <KcalRebalancer
+          idPrefix="calc"
+          current={{ kcal: n(final.kcal) || 0, protein: n(final.p) || 0, carbs: n(final.c) || 0, fat: n(final.f) || 0 }}
+          onApply={(x) => setManual({ kcal: String(x.kcal), p: String(x.protein), c: String(x.carbs), f: String(x.fat) })}
+        />
         {mode === "calculator" && manual && result && overridden && (
           <button type="button" onClick={() => setManual(null)} className="inline-flex w-fit items-center gap-1.5 text-sm text-muted underline hover:text-fg">
             <RotateCcw size={14} /> Usar los valores calculados
