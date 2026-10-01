@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import { publicEnv } from "@/lib/env";
-import { Button, Field, Input } from "@/components/ui";
+import { Button, Field } from "@/components/ui";
+import { PasswordInput } from "@/components/password-input";
 
 type Phase = "checking" | "ready" | "invalid" | "saving" | "done";
 
@@ -88,8 +89,14 @@ export function SetPassword() {
 
     const { error } = await supabase.auth.updateUser({ password: pw });
     if (error) {
+      // Si escribió su misma contraseña actual, ya puede entrar con ella
+      if (error.code === "same_password" || /different from the old/i.test(error.message)) {
+        setPhase("done");
+        window.location.assign("/");
+        return;
+      }
       setPhase("ready");
-      setError(/weak|short|least/i.test(error.message) ? "Elegí una contraseña más segura." : "No se pudo guardar. Intentá de nuevo.");
+      setError(/weak|short|least/i.test(error.message) ? "Elegí una contraseña más segura (mínimo 8 caracteres, combiná letras y números)." : "No se pudo guardar. Revisá tu conexión e intentá de nuevo.");
       return;
     }
     setPhase("done");
@@ -111,10 +118,10 @@ export function SetPassword() {
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
       <Field label="Nueva contraseña" htmlFor="password">
-        <Input id="password" name="password" type="password" autoComplete="new-password" minLength={8} required />
+        <PasswordInput id="password" name="password" autoComplete="new-password" minLength={8} required />
       </Field>
       <Field label="Repetí la contraseña" htmlFor="password2">
-        <Input id="password2" name="password2" type="password" autoComplete="new-password" minLength={8} required />
+        <PasswordInput id="password2" name="password2" autoComplete="new-password" minLength={8} required />
       </Field>
       {error && <p role="alert" className="text-sm text-bad">{error}</p>}
       <Button type="submit" size="lg" disabled={phase !== "ready"} className="mt-2 w-full uppercase tracking-[0.12em]">

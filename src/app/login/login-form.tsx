@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { signIn, type LoginState } from "./actions";
 import { Button, Field, Input } from "@/components/ui";
+import { PasswordInput } from "@/components/password-input";
 
 export function LoginForm({ next }: { next?: string }) {
   const [state, action, pending] = useActionState<LoginState, FormData>(signIn, {});
@@ -14,7 +15,7 @@ export function LoginForm({ next }: { next?: string }) {
         <Input id="email" name="email" type="email" autoComplete="email" inputMode="email" required placeholder="tu@correo.com" />
       </Field>
       <Field label="Contraseña" htmlFor="password" error={state.fieldErrors?.password}>
-        <Input id="password" name="password" type="password" autoComplete="current-password" required />
+        <PasswordInput id="password" name="password" autoComplete="current-password" required />
       </Field>
       {state.error && (
         <p role="alert" className="rounded-xl border border-bad/30 bg-bad/10 px-3.5 py-2.5 text-sm text-bad">
