@@ -365,7 +365,7 @@ function WeekForm({ initial, onSave }: { initial: { label?: string; notes?: stri
         <datalist id="wk_phases">{WEEK_PHASES.map((p) => <option key={p} value={p} />)}</datalist>
       </Field>
       <Field label="Indicaciones de la semana" htmlFor="wk_notes">
-        <Textarea id="wk_notes" value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={500} rows={3} placeholder="Ej. Subí 2,5 kg en los básicos si completaste todas las reps." />
+        <Textarea id="wk_notes" value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={500} rows={3} placeholder="Ej. Semana de descarga: bajá el peso y mantené la técnica." />
       </Field>
       <Button type="submit" disabled={pending}>{pending ? "Guardando…" : "Guardar semana"}</Button>
     </form>
@@ -383,17 +383,7 @@ function CopyWeekForm({
 }) {
   const others = Array.from({ length: weeks }, (_, i) => i + 1).filter((w) => w !== source);
   const [sel, setSel] = useState<number[]>(others.filter((w) => w > source));
-  const [p, setP] = useState({ weight_pct: "", weight_kg: "", rir_delta: "", rpe_delta: "" });
   const [pending, start] = useTransition();
-  const num = (s: string) => Number(s.replace(",", ".")) || 0;
-  const prog = { weight_pct: num(p.weight_pct), weight_kg: num(p.weight_kg), rir_delta: num(p.rir_delta), rpe_delta: num(p.rpe_delta) };
-  const hasProg = Object.values(prog).some((x) => x !== 0);
-  const example = (w: number) => {
-    const k = w - source;
-    const kg = Math.max(0, Math.round((100 * (1 + (prog.weight_pct * k) / 100) + prog.weight_kg * k) * 2) / 2);
-    return `${kg} kg`;
-  };
-
   return (
     <div className="flex flex-col gap-5">
       <fieldset className="flex flex-col gap-2">
@@ -408,27 +398,12 @@ function CopyWeekForm({
             );
           })}
         </div>
-        <p className="text-xs text-faint">Los días de esas semanas se reemplazan por completo con los de la semana {source}.</p>
+        <p className="text-xs text-faint">Los días de esas semanas se reemplazan por completo con los de la semana {source} (ejercicios, series, repeticiones, pesos y notas).</p>
       </fieldset>
-
-      <fieldset className="flex flex-col gap-3 rounded-xl border border-line p-4">
-        <legend className="px-1 text-sm font-semibold">Progresión por semana (opcional)</legend>
-        <p className="text-xs text-muted">Se aplica de forma acumulada: si ponés +2,5 %, la semana siguiente sube 2,5 %, la otra 5 %, etc.</p>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <Field label="Peso (%)" htmlFor="cw_pct"><Input id="cw_pct" inputMode="decimal" value={p.weight_pct} onChange={(e) => setP((x) => ({ ...x, weight_pct: e.target.value }))} placeholder="+2.5" /></Field>
-          <Field label="Peso (kg)" htmlFor="cw_kg"><Input id="cw_kg" inputMode="decimal" value={p.weight_kg} onChange={(e) => setP((x) => ({ ...x, weight_kg: e.target.value }))} placeholder="+2.5" /></Field>
-          <Field label="RIR" htmlFor="cw_rir"><Input id="cw_rir" inputMode="decimal" value={p.rir_delta} onChange={(e) => setP((x) => ({ ...x, rir_delta: e.target.value }))} placeholder="-0.5" /></Field>
-          <Field label="RPE" htmlFor="cw_rpe"><Input id="cw_rpe" inputMode="decimal" value={p.rpe_delta} onChange={(e) => setP((x) => ({ ...x, rpe_delta: e.target.value }))} placeholder="+0.5" /></Field>
-        </div>
-        {hasProg && sel.length > 0 && (
-          <p className="tnum text-xs text-faint">
-            Ejemplo con 100 kg en la semana {source}: {sel.map((w) => `S${w} → ${example(w)}`).join(" · ")}
-            {prog.rir_delta ? ` · RIR ${prog.rir_delta > 0 ? "+" : ""}${prog.rir_delta} por semana` : ""}
-          </p>
-        )}
-      </fieldset>
-
-      <Button type="button" disabled={pending || sel.length === 0} onClick={() => start(() => onConfirm(sel, prog))}>
+      <p className="rounded-xl border border-line bg-graphite px-4 py-3 text-sm text-muted">
+        El avance de cargas lo registra el cliente semana a semana. La app le sugiere cuándo subir peso según lo que hizo la vez anterior.
+      </p>
+      <Button type="button" disabled={pending || sel.length === 0} onClick={() => start(() => onConfirm(sel, { weight_pct: 0, weight_kg: 0, rir_delta: 0, rpe_delta: 0 }))}>
         {pending ? "Copiando…" : `Copiar a ${sel.length} semana(s)`}
       </Button>
     </div>

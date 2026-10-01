@@ -29,7 +29,7 @@ type FieldKey = "sets" | "reps" | "weight_kg" | "rir" | "rpe" | "rest_seconds" |
 const FIELDS: { k: FieldKey; label: string; hint: string; mode: "numeric" | "decimal" | "text"; w: string }[] = [
   { k: "sets", label: "Series", hint: "—", mode: "numeric", w: "w-14" },
   { k: "reps", label: "Reps", hint: "—", mode: "text", w: "w-16" },
-  { k: "weight_kg", label: "Kg", hint: "—", mode: "decimal", w: "w-16" },
+  { k: "weight_kg", label: "Lb", hint: "—", mode: "decimal", w: "w-16" },
   { k: "rir", label: "RIR", hint: "—", mode: "decimal", w: "w-12" },
   { k: "rpe", label: "RPE", hint: "—", mode: "decimal", w: "w-12" },
   { k: "rest_seconds", label: "Descanso", hint: "seg", mode: "text", w: "w-16" },

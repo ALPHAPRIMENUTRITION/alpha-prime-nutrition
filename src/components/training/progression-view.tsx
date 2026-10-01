@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { e1rm, type Exercise, type LogRow } from "@/lib/training/plan";
+import { ArrowDown, ArrowRight, ArrowUp } from "lucide-react";
+import { e1rm, LOAD_UNIT, weekStart, type Exercise, type LogRow } from "@/lib/training/plan";
 import { formatDate } from "@/lib/format";
 import { LineChart } from "@/components/charts/line-chart";
 import { Card } from "@/components/ui";
@@ -9,9 +10,9 @@ import { cn } from "@/lib/cn";
 
 type Metric = "top" | "e1rm" | "volume";
 const METRICS: { id: Metric; label: string; unit: string }[] = [
-  { id: "top", label: "Peso máximo", unit: "kg" },
-  { id: "e1rm", label: "1RM estimado", unit: "kg" },
-  { id: "volume", label: "Volumen", unit: "kg" },
+  { id: "top", label: "Peso máximo", unit: LOAD_UNIT },
+  { id: "e1rm", label: "1RM estimado", unit: LOAD_UNIT },
+  { id: "volume", label: "Volumen", unit: LOAD_UNIT },
 ];
 
 const r1 = (n: number) => Math.round(n * 10) / 10;
@@ -45,6 +46,25 @@ export function ProgressionView({ logs, exercises, empty }: { logs: LogRow[]; ex
       .sort((a, b) => a.date.localeCompare(b.date));
   }, [byExercise, sel]);
 
+  // Resumen por semana (lunes a domingo): con qué peso empezó y su mejor marca.
+  const weeks = useMemo(() => {
+    const m = new Map<string, typeof sessions>();
+    for (const ss of sessions) {
+      const k = weekStart(ss.date);
+      m.set(k, [...(m.get(k) ?? []), ss]);
+    }
+    const list = [...m.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([start, ss]) => {
+        const first = ss[0]!;
+        const firstSet = first.sets.find((x) => x.weight_kg != null);
+        const best = ss.reduce((a, x) => (x.best > a.best ? x : a), ss[0]!);
+        const bestSet = best.sets.reduce((a, x) => (e1rm(x.weight_kg ?? 0, x.reps ?? 0) > e1rm(a.weight_kg ?? 0, a.reps ?? 0) ? x : a), best.sets[0]!);
+        return { start, sessions: ss.length, startW: firstSet?.weight_kg ?? null, startReps: firstSet?.reps ?? null, top: Math.max(...ss.map((x) => x.top)), bestSet, best: best.best };
+      });
+    return list.map((w, i) => ({ ...w, diff: i ? r1(w.top - list[i - 1]!.top) : null }));
+  }, [sessions]);
+
   if (!byExercise.length) return <Card className="px-6 py-8 text-center text-sm text-muted">{empty}</Card>;
 
   const m = METRICS.find((x) => x.id === metric)!;
@@ -65,7 +85,7 @@ export function ProgressionView({ logs, exercises, empty }: { logs: LogRow[]; ex
         >
           {byExercise.map((x) => (
             <option key={x.id} value={x.id}>
-              {exMap.get(x.id)?.name ?? "Ejercicio"} · {x.dates} sesión{x.dates === 1 ? "" : "es"}
+              {exMap.get(x.id)?.name ?? "Ejercicio"} · {x.dates} {x.dates === 1 ? "sesión" : "sesiones"}
             </option>
           ))}
         </select>
@@ -81,7 +101,7 @@ export function ProgressionView({ logs, exercises, empty }: { logs: LogRow[]; ex
             ))}
           </div>
           {change != null && series.length > 1 && (
-            <p className={cn("tnum text-sm font-semibold", change > 0 ? "text-ok" : change < 0 ? "text-bad" : "text-muted")}>
+            <p className={cn("tnum text-sm font-semibold", change > 0 ? "text-ok" : "text-muted")}>
               {change > 0 ? "+" : ""}{change.toLocaleString("es-SV")} {m.unit} desde {formatDate(series[0]!.date)}
             </p>
           )}
@@ -90,13 +110,59 @@ export function ProgressionView({ logs, exercises, empty }: { logs: LogRow[]; ex
         {metric === "e1rm" && <p className="text-xs text-faint">1RM estimado con la fórmula de Epley a partir de la mejor serie. Es orientativo.</p>}
       </Card>
 
+      {weeks.length > 0 && (
+        <Card className="p-0">
+          <div className="border-b border-line px-4 py-3">
+            <p className="text-sm font-semibold">Avance por semana</p>
+            <p className="text-xs text-faint">Subir o bajar entre semanas es normal (fatiga, descarga, técnica). Lo importante es la tendencia.</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[460px] text-sm">
+              <thead>
+                <tr className="border-b border-line text-left text-[11px] font-semibold uppercase tracking-[0.12em] text-faint">
+                  <th scope="col" className="px-4 py-2">Semana</th>
+                  <th scope="col" className="px-2 py-2">Empezó con</th>
+                  <th scope="col" className="px-2 py-2">Mejor serie</th>
+                  <th scope="col" className="px-2 py-2">Peso máx.</th>
+                  <th scope="col" className="px-4 py-2 text-right">vs. anterior</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[...weeks].reverse().map((w) => (
+                  <tr key={w.start} className="border-b border-line last:border-0">
+                    <td className="px-4 py-2.5">
+                      <span className="font-medium">{formatDate(w.start)}</span>
+                      <span className="block text-xs text-faint">{w.sessions} {w.sessions === 1 ? "sesión" : "sesiones"}</span>
+                    </td>
+                    <td className="tnum px-2 py-2.5">{w.startW != null ? `${fmtN(w.startW)} ${LOAD_UNIT} × ${w.startReps ?? "–"}` : "–"}</td>
+                    <td className="tnum px-2 py-2.5">{w.bestSet ? `${fmtN(w.bestSet.weight_kg)} × ${w.bestSet.reps ?? "–"}` : "–"}</td>
+                    <td className="tnum px-2 py-2.5 font-semibold">{fmtN(w.top)} {LOAD_UNIT}</td>
+                    <td className="tnum px-4 py-2.5 text-right">
+                      {w.diff == null ? (
+                        <span className="text-faint">inicio</span>
+                      ) : w.diff > 0 ? (
+                        <span className="inline-flex items-center gap-1 font-semibold text-ok"><ArrowUp size={13} aria-hidden="true" />+{fmtN(w.diff)}</span>
+                      ) : w.diff < 0 ? (
+                        <span className="inline-flex items-center gap-1 text-muted"><ArrowDown size={13} aria-hidden="true" />{fmtN(w.diff)}</span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-muted"><ArrowRight size={13} aria-hidden="true" />igual</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+
       <Card className="p-0">
         <ul>
           {[...sessions].reverse().map((s) => (
             <li key={s.date} className="border-b border-line px-4 py-3 last:border-0">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <p className="text-sm font-semibold">{formatDate(s.date)}</p>
-                <p className="tnum text-xs text-muted">Máx {fmtN(s.top)} kg · 1RM est. {fmtN(r1(s.best))} kg · Vol {Math.round(s.volume).toLocaleString("es-SV")} kg</p>
+                <p className="tnum text-xs text-muted">Máx {fmtN(s.top)} {LOAD_UNIT} · 1RM est. {fmtN(r1(s.best))} {LOAD_UNIT} · Vol {Math.round(s.volume).toLocaleString("es-SV")} {LOAD_UNIT}</p>
               </div>
               <p className="tnum mt-1 text-sm">
                 {s.sets.map((x) => `${fmtN(x.weight_kg)}×${x.reps ?? "–"}${x.rir != null ? ` (RIR ${fmtN(x.rir)})` : x.rpe != null ? ` (RPE ${fmtN(x.rpe)})` : ""}`).join(" · ")}

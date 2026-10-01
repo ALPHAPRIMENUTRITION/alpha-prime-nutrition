@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Check, History, MessageSquare, Plus, Trash2 } from "lucide-react";
+import { Check, History, Lightbulb, MessageSquare, Plus, Trash2 } from "lucide-react";
 import { deleteSetAction, saveSetAction } from "@/app/portal/entrenamiento/actions";
-import { prescriptionLine, type Exercise, type LogRow, type WExercise } from "@/lib/training/plan";
+import { LOAD_UNIT, prescriptionLine, suggestNext, type Exercise, type LogRow, type Suggestion, type WExercise } from "@/lib/training/plan";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
@@ -51,6 +51,7 @@ function ExerciseLog({ index, row, exercise, logs, prev, date, canLog }: { index
   const [count, setCount] = useState(planned);
   const useRpe = row.rpe != null && row.rir == null;
   const done = logs.length;
+  const suggestion = suggestNext(row, prev?.sets ?? []);
 
   return (
     <article className="overflow-hidden rounded-card border border-line bg-panel">
@@ -76,11 +77,20 @@ function ExerciseLog({ index, row, exercise, logs, prev, date, canLog }: { index
           </span>
         </p>
       )}
+      {suggestion && (
+        <p className="flex items-start gap-1.5 border-b border-line px-4 py-2 text-xs text-muted">
+          <Lightbulb size={13} className={cn("mt-0.5 shrink-0", suggestion.kind === "up" ? "text-ok" : "text-warn")} aria-hidden="true" />
+          <span>
+            <span className="font-semibold text-fg">Sugerencia: </span>
+            {suggestion.note}
+          </span>
+        </p>
+      )}
 
       <div className="flex flex-col divide-y divide-line">
         <div className="grid grid-cols-[2rem_1fr_1fr_1fr_2.5rem_2.5rem] items-center gap-2 px-4 pt-2 text-[10px] font-semibold uppercase tracking-wider text-faint">
           <span>Serie</span>
-          <span>Kg</span>
+          <span>{LOAD_UNIT === "lb" ? "Lb" : "Kg"}</span>
           <span>Reps</span>
           <span>{useRpe ? "RPE" : "RIR"}</span>
           <span className="sr-only">Comentario</span>
@@ -94,6 +104,7 @@ function ExerciseLog({ index, row, exercise, logs, prev, date, canLog }: { index
             exerciseName={exercise?.name ?? "ejercicio"}
             log={logs.find((l) => l.set_number === k + 1)}
             prevSet={prev?.sets.find((s) => s.set_number === k + 1)}
+            suggestion={suggestion}
             useRpe={useRpe}
             date={date}
             canLog={canLog}
@@ -109,7 +120,7 @@ function ExerciseLog({ index, row, exercise, logs, prev, date, canLog }: { index
   );
 }
 
-function SetRow({ n, row, exerciseName, log, prevSet, useRpe, date, canLog }: { n: number; row: WExercise; exerciseName: string; log?: LogRow; prevSet?: LogRow; useRpe: boolean; date: string; canLog: boolean }) {
+function SetRow({ n, row, exerciseName, log, prevSet, suggestion, useRpe, date, canLog }: { n: number; row: WExercise; exerciseName: string; log?: LogRow; prevSet?: LogRow; suggestion: Suggestion | null; useRpe: boolean; date: string; canLog: boolean }) {
   const [v, setV] = useState({
     weight_kg: fmt(log?.weight_kg ?? null),
     reps: log?.reps != null ? String(log.reps) : "",
@@ -126,8 +137,8 @@ function SetRow({ n, row, exerciseName, log, prevSet, useRpe, date, canLog }: { 
     setV((x) => ({ ...x, [k]: e.target.value }));
     setDirty(true);
   };
-  // Sugerencias: lo prescrito o lo de la vez pasada
-  const phWeight = row.weight_kg != null ? fmt(row.weight_kg) : fmt(prevSet?.weight_kg ?? null);
+  // Sugerencias en gris: lo que sugiere la app según la vez pasada, o lo indicado por el coach
+  const phWeight = suggestion?.weight != null ? fmt(suggestion.weight) : row.weight_kg != null ? fmt(row.weight_kg) : fmt(prevSet?.weight_kg ?? null);
   const phReps = row.reps ?? (prevSet?.reps != null ? String(prevSet.reps) : "");
   const phEffort = fmt((useRpe ? row.rpe : row.rir) ?? null);
 
@@ -162,7 +173,7 @@ function SetRow({ n, row, exerciseName, log, prevSet, useRpe, date, canLog }: { 
     <div className={cn("px-4 py-2", isDone && "bg-ok/5")}>
       <div className="grid grid-cols-[2rem_1fr_1fr_1fr_2.5rem_2.5rem] items-center gap-2">
         <span className={cn("tnum text-sm font-bold", isDone ? "text-ok" : "text-muted")}>{n}</span>
-        <input aria-label={`Kg serie ${n} de ${exerciseName}`} inputMode="decimal" value={v.weight_kg} onChange={set("weight_kg")} placeholder={phWeight || "kg"} disabled={!canLog} className={input} />
+        <input aria-label={`Lb serie ${n} de ${exerciseName}`} inputMode="decimal" value={v.weight_kg} onChange={set("weight_kg")} placeholder={phWeight || LOAD_UNIT} disabled={!canLog} className={input} />
         <input aria-label={`Repeticiones serie ${n} de ${exerciseName}`} inputMode="numeric" value={v.reps} onChange={set("reps")} placeholder={phReps || "reps"} disabled={!canLog} className={input} />
         <input aria-label={`${useRpe ? "RPE" : "RIR"} serie ${n} de ${exerciseName}`} inputMode="decimal" value={v.effort} onChange={set("effort")} placeholder={phEffort || "–"} disabled={!canLog} className={input} />
         <button type="button" onClick={() => setShowComment((x) => !x)} disabled={!canLog} aria-label={`Comentario serie ${n}`} aria-expanded={showComment} className={cn("grid h-10 w-10 place-items-center rounded-lg", v.comment ? "text-fg" : "text-faint hover:text-fg")}>

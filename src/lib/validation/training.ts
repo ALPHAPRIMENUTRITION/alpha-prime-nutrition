@@ -25,7 +25,7 @@ export const prescriptionSchema = z
   .object({
     sets: optNum(1, 20, "Series", true),
     reps: optText(20),
-    weight_kg: optNum(0, 1000, "Peso"),
+    weight_kg: optNum(0, 2000, "Peso"),
     rir: optNum(0, 10, "RIR"),
     rpe: optNum(1, 10, "RPE"),
     rest_seconds: optNum(0, 1800, "Descanso", true),
@@ -47,7 +47,7 @@ export const weekInfoSchema = z.object({
 });
 
 export const logSetSchema = z.object({
-  weight_kg: optNum(0, 1000, "Peso"),
+  weight_kg: optNum(0, 2000, "Peso"),
   reps: optNum(0, 200, "Repeticiones", true),
   rir: optNum(0, 10, "RIR"),
   rpe: optNum(1, 10, "RPE"),
