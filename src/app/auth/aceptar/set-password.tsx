@@ -17,13 +17,16 @@ function authClient() {
 }
 
 /**
- * Recibe el link de invitación o de recuperación, abre la sesión y deja
- * crear la contraseña. Soporta los tres formatos de Supabase:
- * #access_token (invitación), ?code (PKCE) y ?token_hash.
+ * Activación de cuenta y cambio de contraseña.
+ *
+ * - Link de la app (?token_hash): el token NO se usa al abrir la página,
+ *   solo al tocar "Guardar". Así las vistas previas de WhatsApp no lo gastan.
+ * - Links de correo de Supabase (#access_token o ?code): se procesan al abrir.
  */
 export function SetPassword() {
   const [phase, setPhase] = useState<Phase>("checking");
   const [error, setError] = useState<string | null>(null);
+  const [pendingToken, setPendingToken] = useState<{ hash: string; type: "invite" | "recovery" } | null>(null);
 
   useEffect(() => {
     const supabase = authClient();
@@ -32,6 +35,16 @@ export function SetPassword() {
       const hash = new URLSearchParams(url.hash.slice(1));
       try {
         if (hash.get("error_description") || url.searchParams.get("error_description")) throw new Error("expired");
+
+        const tokenHash = url.searchParams.get("token_hash");
+        if (tokenHash) {
+          const type = url.searchParams.get("type") === "recovery" ? "recovery" : "invite";
+          setPendingToken({ hash: tokenHash, type });
+          window.history.replaceState(null, "", "/auth/aceptar");
+          setPhase("ready");
+          return;
+        }
+
         if (hash.get("access_token") && hash.get("refresh_token")) {
           const { error } = await supabase.auth.setSession({
             access_token: hash.get("access_token")!,
@@ -41,12 +54,7 @@ export function SetPassword() {
         } else if (url.searchParams.get("code")) {
           const { error } = await supabase.auth.exchangeCodeForSession(url.searchParams.get("code")!);
           if (error) throw error;
-        } else if (url.searchParams.get("token_hash")) {
-          const type = (url.searchParams.get("type") ?? "invite") as "invite" | "recovery";
-          const { error } = await supabase.auth.verifyOtp({ token_hash: url.searchParams.get("token_hash")!, type });
-          if (error) throw error;
         }
-        // Limpia los tokens de la barra de direcciones
         window.history.replaceState(null, "", "/auth/aceptar");
         const { data } = await supabase.auth.getUser();
         setPhase(data.user ? "ready" : "invalid");
@@ -66,7 +74,19 @@ export function SetPassword() {
     if (pw !== pw2) return setError("Las contraseñas no coinciden.");
     setError(null);
     setPhase("saving");
-    const { error } = await authClient().auth.updateUser({ password: pw });
+
+    const supabase = authClient();
+    if (pendingToken) {
+      // Recién acá se usa el token de un solo uso
+      const { error } = await supabase.auth.verifyOtp({ token_hash: pendingToken.hash, type: pendingToken.type });
+      if (error) {
+        setPhase("invalid");
+        return;
+      }
+      setPendingToken(null);
+    }
+
+    const { error } = await supabase.auth.updateUser({ password: pw });
     if (error) {
       setPhase("ready");
       setError(/weak|short|least/i.test(error.message) ? "Elegí una contraseña más segura." : "No se pudo guardar. Intentá de nuevo.");
@@ -98,7 +118,7 @@ export function SetPassword() {
       </Field>
       {error && <p role="alert" className="text-sm text-bad">{error}</p>}
       <Button type="submit" size="lg" disabled={phase !== "ready"} className="mt-2 w-full uppercase tracking-[0.12em]">
-        {phase === "saving" || phase === "done" ? "Guardando…" : "Guardar y entrar"}
+        {phase === "saving" || phase === "done" ? "Activando…" : "Activar y entrar"}
       </Button>
     </form>
   );

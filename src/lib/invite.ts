@@ -30,6 +30,12 @@ export async function createAccessLink(params: { clientId: string; email: string
   let userId = client?.user_id as string | null;
   let kind: "invite" | "recovery" = "invite";
   let link: string | undefined;
+  // El link apunta a nuestra página con el token en la URL; el token solo se
+  // consume cuando la persona toca "Activar". Así las vistas previas de
+  // WhatsApp/Telegram (que abren los links) no lo gastan.
+  const site = publicEnv().NEXT_PUBLIC_SITE_URL;
+  const ownLink = (hashed: string, type: "invite" | "recovery") =>
+    `${site}/auth/aceptar?token_hash=${encodeURIComponent(hashed)}&type=${type}`;
 
   if (!userId) {
     const { data, error } = await admin.auth.admin.generateLink({
@@ -39,7 +45,7 @@ export async function createAccessLink(params: { clientId: string; email: string
     });
     if (!error && data.user) {
       userId = data.user.id;
-      link = data.properties.action_link;
+      link = ownLink(data.properties.hashed_token, "invite");
     } else if (error && /already|registered|exists/i.test(error.message)) {
       // El correo ya tiene cuenta: solo se vincula si es de cliente y está libre.
       const existing = await findUserIdByEmail(params.email);
@@ -70,8 +76,8 @@ export async function createAccessLink(params: { clientId: string; email: string
       options: { redirectTo },
     });
     if (error) return { ok: false, reason: "error", message: "No se pudo generar el link." };
-    link = data.properties.action_link;
     kind = neverConfirmed ? "invite" : "recovery";
+    link = ownLink(data.properties.hashed_token, kind);
   }
 
   return { ok: true, link, kind };
