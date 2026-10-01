@@ -264,9 +264,7 @@ as $$
   )
 $$;
 
-drop policy "workout_plans: leer" on public.workout_plans;
-create policy "workout_plans: leer" on public.workout_plans
-  for select to authenticated
+alter policy "workout_plans: leer" on public.workout_plans
   using (coach_id = auth.uid() or (client_id is not null and is_active and public.client_has_access(client_id)));
 
 -- ---------------------------------------------------------------------
@@ -346,81 +344,43 @@ to authenticated;
 
 -- Plan: el coach por columna (auth.uid() evaluado una sola vez); el
 -- cliente por su id y su acceso, también evaluados una sola vez.
-drop policy "nutrition_plans: leer" on public.nutrition_plans;
-create policy "nutrition_plans: leer" on public.nutrition_plans
-  for select to authenticated
+-- (alter policy: se modifican las reglas existentes, no se borran)
+alter policy "nutrition_plans: leer" on public.nutrition_plans
   using (coach_id = (select auth.uid())
          or (is_active
              and client_id = (select public.my_client_id())
              and (select public.client_has_access(public.my_client_id()))));
 
-drop policy "nutrition_plans: coach escribe" on public.nutrition_plans;
-create policy "nutrition_plans: coach escribe" on public.nutrition_plans
-  for all to authenticated
+alter policy "nutrition_plans: coach escribe" on public.nutrition_plans
   using (coach_id = (select auth.uid()))
   with check (coach_id = (select auth.uid()) and (client_id is null or public.is_coach_of(client_id)));
 
-drop policy "nutrition_plan_days: leer" on public.nutrition_plan_days;
-drop policy "nutrition_plan_days: escribir" on public.nutrition_plan_days;
-create policy "nutrition_plan_days: leer" on public.nutrition_plan_days
-  for select to authenticated using (plan_id in (select public.nutrition_scope_plans(false)));
-create policy "nutrition_plan_days: coach crea" on public.nutrition_plan_days
-  for insert to authenticated with check (plan_id in (select public.nutrition_scope_plans(true)));
-create policy "nutrition_plan_days: coach edita" on public.nutrition_plan_days
-  for update to authenticated
+alter policy "nutrition_plan_days: leer" on public.nutrition_plan_days
+  using (plan_id in (select public.nutrition_scope_plans(false)));
+alter policy "nutrition_plan_days: escribir" on public.nutrition_plan_days
   using (plan_id in (select public.nutrition_scope_plans(true)))
   with check (plan_id in (select public.nutrition_scope_plans(true)));
-create policy "nutrition_plan_days: coach elimina" on public.nutrition_plan_days
-  for delete to authenticated using (plan_id in (select public.nutrition_scope_plans(true)));
 
-drop policy "meals: leer" on public.meals;
-drop policy "meals: escribir" on public.meals;
-create policy "meals: leer" on public.meals
-  for select to authenticated using (day_id in (select public.nutrition_scope_days(false)));
-create policy "meals: coach crea" on public.meals
-  for insert to authenticated with check (day_id in (select public.nutrition_scope_days(true)));
-create policy "meals: coach edita" on public.meals
-  for update to authenticated
+alter policy "meals: leer" on public.meals
+  using (day_id in (select public.nutrition_scope_days(false)));
+alter policy "meals: escribir" on public.meals
   using (day_id in (select public.nutrition_scope_days(true)))
   with check (day_id in (select public.nutrition_scope_days(true)));
-create policy "meals: coach elimina" on public.meals
-  for delete to authenticated using (day_id in (select public.nutrition_scope_days(true)));
 
-drop policy "meal_options: leer" on public.meal_options;
-drop policy "meal_options: escribir" on public.meal_options;
-create policy "meal_options: leer" on public.meal_options
-  for select to authenticated using (meal_id in (select public.nutrition_scope_meals(false)));
-create policy "meal_options: coach crea" on public.meal_options
-  for insert to authenticated with check (meal_id in (select public.nutrition_scope_meals(true)));
-create policy "meal_options: coach edita" on public.meal_options
-  for update to authenticated
+alter policy "meal_options: leer" on public.meal_options
+  using (meal_id in (select public.nutrition_scope_meals(false)));
+alter policy "meal_options: escribir" on public.meal_options
   using (meal_id in (select public.nutrition_scope_meals(true)))
   with check (meal_id in (select public.nutrition_scope_meals(true)));
-create policy "meal_options: coach elimina" on public.meal_options
-  for delete to authenticated using (meal_id in (select public.nutrition_scope_meals(true)));
 
-drop policy "meal_items: leer" on public.meal_items;
-drop policy "meal_items: escribir" on public.meal_items;
-create policy "meal_items: leer" on public.meal_items
-  for select to authenticated using (meal_option_id in (select public.nutrition_scope_options(false)));
-create policy "meal_items: coach crea" on public.meal_items
-  for insert to authenticated with check (meal_option_id in (select public.nutrition_scope_options(true)));
-create policy "meal_items: coach edita" on public.meal_items
-  for update to authenticated
+alter policy "meal_items: leer" on public.meal_items
+  using (meal_option_id in (select public.nutrition_scope_options(false)));
+alter policy "meal_items: escribir" on public.meal_items
   using (meal_option_id in (select public.nutrition_scope_options(true)))
   with check (meal_option_id in (select public.nutrition_scope_options(true)));
-create policy "meal_items: coach elimina" on public.meal_items
-  for delete to authenticated using (meal_option_id in (select public.nutrition_scope_options(true)));
 
-drop policy "food_substitutions: leer" on public.food_substitutions;
-drop policy "food_substitutions: escribir" on public.food_substitutions;
-create policy "food_substitutions: leer" on public.food_substitutions
-  for select to authenticated using (meal_item_id in (select public.nutrition_scope_items(false)));
-create policy "food_substitutions: coach crea" on public.food_substitutions
-  for insert to authenticated with check (meal_item_id in (select public.nutrition_scope_items(true)));
-create policy "food_substitutions: coach edita" on public.food_substitutions
-  for update to authenticated
+alter policy "food_substitutions: leer" on public.food_substitutions
+  using (meal_item_id in (select public.nutrition_scope_items(false)));
+alter policy "food_substitutions: escribir" on public.food_substitutions
   using (meal_item_id in (select public.nutrition_scope_items(true)))
   with check (meal_item_id in (select public.nutrition_scope_items(true)));
-create policy "food_substitutions: coach elimina" on public.food_substitutions
-  for delete to authenticated using (meal_item_id in (select public.nutrition_scope_items(true)));
