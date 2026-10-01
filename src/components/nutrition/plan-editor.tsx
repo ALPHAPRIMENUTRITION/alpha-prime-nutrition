@@ -3,7 +3,7 @@
 import { useActionState, useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Calculator, CopyPlus, Pencil, Plus, Power, Trash2 } from "lucide-react";
+import { ArrowLeft, Calculator, CopyPlus, Pencil, Plus, Power, Trash2, Wand2 } from "lucide-react";
 import * as A from "@/app/coach/planes/actions";
 import type { PlanFormState } from "@/app/coach/planes/actions";
 import { DAY_NAMES, DAY_SHORT, dayMacros, type Food, type PlanTree } from "@/lib/nutrition/plan";
@@ -15,6 +15,7 @@ import { MacroSummary } from "@/components/nutrition/macro-summary";
 import { MealCard, type MealHandlers } from "@/components/nutrition/meal-card";
 import { NutritionCalculator, describeCalculation, type CalcDefaults } from "@/components/nutrition/calculator";
 import { DayTargets } from "@/components/nutrition/day-targets";
+import { AutoFit } from "@/components/nutrition/auto-fit";
 import { SupplementsEditor, type SupplementHandlers } from "@/components/nutrition/supplements-editor";
 import { cn } from "@/lib/cn";
 
@@ -61,7 +62,7 @@ export function PlanEditor({
   const [day, setDay] = useState(initialDay);
   const [toast, setToast] = useState<{ text: string; bad?: boolean } | null>(null);
   const [busy, startBusy] = useTransition();
-  const [dialog, setDialog] = useState<null | "calc" | "meta" | "dup" | "copyDay" | { copyMeal: string }>(null);
+  const [dialog, setDialog] = useState<null | "calc" | "meta" | "dup" | "copyDay" | "fit" | { copyMeal: string }>(null);
 
   useEffect(() => setTree(withPending(plan, pendingQty.current)), [plan]);
   useEffect(() => {
@@ -268,6 +269,21 @@ export function PlanEditor({
               className="mt-1 w-full max-w-sm border-b border-transparent bg-transparent text-sm text-muted placeholder:text-faint focus:border-line focus:outline-none"
             />
           </div>
+          <Button
+            type="button"
+            size="sm"
+            disabled={!current?.meals.some((m) => m.options.some((o) => o.items.length))}
+            onClick={async () => {
+              if (!tree.target_kcal) {
+                setToast({ text: "Primero definí los objetivos del plan", bad: true });
+                return;
+              }
+              await flush();
+              setDialog("fit");
+            }}
+          >
+            <Wand2 size={15} /> Auto-ajustar
+          </Button>
           <Button type="button" variant="secondary" size="sm" disabled={!current?.meals.length} onClick={() => setDialog("copyDay")}>
             <CopyPlus size={15} /> Copiar este día a…
           </Button>
@@ -328,6 +344,21 @@ export function PlanEditor({
             return null;
           }}
         />
+      </Dialog>
+
+      <Dialog open={dialog === "fit"} onClose={() => setDialog(null)} title={`Auto-ajustar ${DAY_NAMES[day - 1]}`} wide>
+        {dialog === "fit" && current && (
+          <AutoFit
+            day={current}
+            foodMap={foodMap}
+            targets={{ kcal: tree.target_kcal ?? 0, protein: tree.target_protein_g ?? 0, carbs: tree.target_carbs_g ?? 0, fat: tree.target_fat_g ?? 0 }}
+            onApply={async (updates) => {
+              const ok = await run(() => A.applyQuantitiesAction(plan.id, updates), "Cantidades ajustadas");
+              if (ok) setDialog(null);
+              return ok;
+            }}
+          />
+        )}
       </Dialog>
 
       <Dialog open={dialog === "copyDay"} onClose={() => setDialog(null)} title={`Copiar ${DAY_NAMES[day - 1]}`} wide>

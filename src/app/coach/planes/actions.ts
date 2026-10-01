@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { fieldErrors } from "@/lib/validation/client";
 import { foodSchema, planMetaSchema, quantitySchema, shortText, supplementSchema, targetsSchema, uuid } from "@/lib/validation/nutrition";
 import type { Food } from "@/lib/nutrition/plan";
+import { getPlanTree } from "@/lib/data/nutrition";
 import { z } from "zod";
 
 export type ActionResult<T = undefined> = { ok: true; data?: T } | { ok: false; error: string };
@@ -358,6 +359,22 @@ export async function updateQuantityAction(planId: string, itemId: string, quant
   await touch(planId, false);
   revalidatePath("/portal/nutricion");
   return { ok: true };
+}
+
+/** Aplica la propuesta del auto-ajuste (solo alimentos de ESTE plan). */
+export async function applyQuantitiesAction(planId: string, updates: { id: string; quantity: number }[]): Promise<ActionResult<number>> {
+  if (!(await guard(planId))) return fail("Plan inválido.");
+  const parsed = z.array(z.object({ id: uuid, quantity: quantitySchema })).min(1).max(300).safeParse(updates);
+  if (!parsed.success) return fail("Cantidades inválidas.");
+  const tree = await getPlanTree(planId);
+  if (!tree) return fail("Plan no encontrado.");
+  const own = new Set(tree.days.flatMap((d) => d.meals.flatMap((m) => m.options.flatMap((o) => o.items.map((i) => i.id)))));
+  if (parsed.data.some((u) => !own.has(u.id))) return fail("Hay alimentos que no son de este plan.");
+  const supabase = await createClient();
+  const results = await Promise.all(parsed.data.map((u) => supabase.from("meal_items").update({ quantity: u.quantity }).eq("id", u.id)));
+  if (results.some((r) => r.error)) return fail("No se pudieron guardar todas las cantidades.");
+  await touch(planId);
+  return { ok: true, data: parsed.data.length };
 }
 
 export async function deleteItemAction(planId: string, itemId: string): Promise<ActionResult> {

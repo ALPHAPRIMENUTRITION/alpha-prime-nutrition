@@ -5,7 +5,7 @@ Plataforma de coaching nutricional y entrenamiento con dos roles: **COACH** y **
 **Estado: Fases 1, 2 y 3 completas.**
 - Fase 1: arquitectura, base de datos, autenticación, roles y dashboards.
 - Fase 2: alta/edición/suspensión de clientes, acceso por link (WhatsApp), expediente con antropometría, progreso (gráficas, antes vs actual, fotos), notas privadas, historial de cambios, y sección Progreso en el portal del cliente.
-- Fase 3: calculadora nutricional (Mifflin-St Jeor, Harris-Benedict revisada, Katch-McArdle, Cunningham) con ajuste manual del coach, constructor de dietas (comidas, gramos, macros en vivo, opciones A/B, sustituciones, copiar comida/día/plan, planes por semanas, plantillas), catálogo de alimentos, suplementación pautada por plan (producto, dosis, momento, frecuencia, indicaciones) y vista Nutrición en el portal.
+- Fase 3: calculadora nutricional (Mifflin-St Jeor, Harris-Benedict revisada, Katch-McArdle, Cunningham) con ajuste manual del coach, constructor de dietas (comidas, gramos, macros en vivo, opciones A/B, sustituciones, copiar comida/día/plan, planes por semanas, plantillas), catálogo de alimentos, auto-ajuste de cantidades (propone gramos para cumplir los objetivos con los alimentos elegidos; el coach revisa, fija y aplica), suplementación pautada por plan (producto, dosis, momento, frecuencia, indicaciones) y vista Nutrición en el portal.
 
 ### Acceso de clientes (Fase 2)
 Al crear un cliente se genera un **link de acceso** para compartir por WhatsApp; con él crea su contraseña en `/auth/aceptar`.
@@ -150,6 +150,7 @@ alpha-prime-nutrition/
 - **Pagos manuales desde el día 1:** las tablas `subscriptions`/`payments` aceptan `provider = 'manual'` (efectivo, transferencia) además de `stripe`. Ver nota sobre Stripe abajo.
 - **Calculadora nutricional como apoyo, no decisión:** muestra fórmula, datos usados y resultado; el coach puede editar cualquier valor final y queda registrado como "ajuste manual" junto al cálculo original (`nutrition_plans.calculation`). Valores de alimentos base aproximados (USDA); el coach puede crear los suyos.
 - **RLS rápida en el árbol del plan:** en vez de evaluar funciones por fila, cada consulta calcula una vez el conjunto de IDs permitidos (`nutrition_scope_*`). El cliente solo ve su plan **activo**.
+- **Auto-ajuste como propuesta:** mínimos cuadrados con límites por alimento (`src/lib/nutrition/autofit.ts`), redondeo a porciones prácticas; nada se guarda sin que el coach lo aplique.
 - **Fórmulas y adherencia como sugerencia:** el check-in calcula una adherencia sugerida (60 % nutrición + 40 % entrenamientos), pero el coach puede sobrescribirla (`coach_adherence_override`).
 
 ## Deployment (producción)
