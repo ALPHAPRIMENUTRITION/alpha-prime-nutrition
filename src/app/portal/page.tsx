@@ -1,5 +1,8 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 import { CalendarCheck, Scale, Target } from "lucide-react";
+import { dueDateOfWeek, mondayOf } from "@/lib/checkin";
+import { cn } from "@/lib/cn";
 import { getPortalContext, getPortalHome, nextCheckinDate, programWeek } from "@/lib/data/portal";
 import { diffDaysISO, formatDate, formatKg, todayISO } from "@/lib/format";
 import { MEMBERSHIP_LABEL, MEMBERSHIP_TONE } from "@/lib/membership";
@@ -44,6 +47,9 @@ export default async function PortalHome() {
   const delta = startWeight != null && currentWeight != null ? currentWeight - startWeight : null;
 
   const nextCheckin = nextCheckinDate(ctx.checkinWeekday, last?.submitted_at ?? null);
+  const monday = mondayOf(todayISO());
+  const thisWeek = checkins.find((c) => c.week_start === monday);
+  const checkinState: "sent" | "pending" | "upcoming" = thisWeek ? "sent" : todayISO() >= dueDateOfWeek(monday, ctx.checkinWeekday) ? "pending" : "upcoming";
   const daysToCheckin = diffDaysISO(nextCheckin, todayISO());
 
   return (
@@ -97,20 +103,28 @@ export default async function PortalHome() {
         </Card>
       </div>
 
-      <Card className="flex items-center justify-between gap-3 p-4">
+      <Link
+        href="/portal/checkin"
+        className={cn(
+          "flex items-center justify-between gap-3 rounded-card border p-4 transition-colors hover:border-faint",
+          checkinState === "pending" ? "border-red/50 bg-red/10" : "border-line bg-panel",
+        )}
+      >
         <div className="flex items-center gap-3">
-          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-panel-2 text-fg">
+          <span className={cn("grid h-10 w-10 shrink-0 place-items-center rounded-full", checkinState === "pending" ? "bg-red text-white" : "bg-panel-2 text-fg")}>
             <CalendarCheck size={20} strokeWidth={1.8} />
           </span>
           <div>
-            <p className="eyebrow">Próximo check-in</p>
-            <p className="font-semibold">{formatDate(nextCheckin)}</p>
+            <p className="eyebrow">{checkinState === "sent" ? "Check-in de esta semana" : "Próximo check-in"}</p>
+            <p className="font-semibold">
+              {checkinState === "sent" ? (thisWeek?.status === "reviewed" ? "Enviado y revisado" : "Enviado · esperando revisión") : checkinState === "pending" ? "Pendiente: completalo ahora" : formatDate(nextCheckin)}
+            </p>
           </div>
         </div>
         <span className="text-sm font-semibold text-red">
-          {daysToCheckin === 0 ? "Hoy" : daysToCheckin === 1 ? "Mañana" : `En ${daysToCheckin} días`}
+          {checkinState === "sent" ? "Ver" : checkinState === "pending" ? "Completar" : daysToCheckin === 0 ? "Hoy" : daysToCheckin === 1 ? "Mañana" : `En ${daysToCheckin} días`}
         </span>
-      </Card>
+      </Link>
 
       <Card className="flex items-center justify-between gap-3 p-4">
         <div>

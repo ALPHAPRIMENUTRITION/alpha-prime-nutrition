@@ -58,7 +58,7 @@ export default async function CoachDashboard({ searchParams }: { searchParams: P
         <StatCard label="Activos" value={stats.active} tone="ok" href="/coach?filtro=activos#clientes" />
         <StatCard label="Por vencer" value={stats.expiring_soon} hint="Próximos 7 días" tone={stats.expiring_soon ? "warn" : "default"} href="/coach?filtro=por-vencer#clientes" />
         <StatCard label="Vencidos" value={stats.overdue} hint={`${stats.expired} sin acceso`} tone={stats.overdue ? "bad" : "default"} href="/coach?filtro=vencidos#clientes" />
-        <StatCard label="Check-ins pendientes" value={stats.checkins_pending} hint="Más de 7 días sin enviar" tone={stats.checkins_pending ? "warn" : "default"} href="/coach?filtro=checkin#clientes" />
+        <StatCard label="Check-ins pendientes" value={stats.checkins_pending} hint="Más de 7 días sin enviar" tone={stats.checkins_pending ? "warn" : "default"} href="/coach/checkins?vista=pendientes" />
         <StatCard label="Baja adherencia" value={stats.low_adherence} hint="Menos de 70 %" tone={stats.low_adherence ? "warn" : "default"} href="/coach?filtro=baja-adherencia#clientes" />
         <StatCard label="Suspendidos" value={stats.suspended} href="/coach?filtro=suspendidos#clientes" />
         <StatCard

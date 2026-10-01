@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, CreditCard, Dumbbell, TrendingUp, Utensils } from "lucide-react";
+import { ClipboardCheck, Home, CreditCard, Dumbbell, TrendingUp, Utensils } from "lucide-react";
 import { cn } from "@/lib/cn";
 
-// Check-in se suma en la Fase 5.
 const ITEMS = [
   { label: "Inicio", href: "/portal", icon: Home },
   { label: "Nutrición", href: "/portal/nutricion", icon: Utensils },
   { label: "Entreno", href: "/portal/entrenamiento", icon: Dumbbell },
+  { label: "Check-in", href: "/portal/checkin", icon: ClipboardCheck },
   { label: "Progreso", href: "/portal/progreso", icon: TrendingUp },
   { label: "Membresía", href: "/portal/membresia", icon: CreditCard },
 ];
@@ -29,9 +29,9 @@ export function PortalNav() {
               <Link
                 href={href}
                 aria-current={on ? "page" : undefined}
-                className={cn("flex flex-col items-center gap-1 py-2.5 text-[11px] font-semibold", on ? "text-red" : "text-muted")}
+                className={cn("flex flex-col items-center gap-1 py-2.5 text-[10.5px] font-semibold", on ? "text-red" : "text-muted")}
               >
-                <Icon size={21} strokeWidth={1.8} />
+                <Icon size={20} strokeWidth={1.8} />
                 {label}
               </Link>
             </li>

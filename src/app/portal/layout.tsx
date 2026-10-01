@@ -3,9 +3,16 @@ import { requireRole } from "@/lib/auth";
 import { LogoMark } from "@/components/brand/logo";
 import { PortalNav } from "@/components/portal/portal-nav";
 import { SignOutButton } from "@/components/sign-out-button";
+import { NotificationsBell } from "@/components/notifications/bell";
+import { createClient } from "@/lib/supabase/server";
+import { countUnread } from "@/lib/data/notifications";
 
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
   await requireRole("client");
+  // Si ya pasó el día de check-in y no lo envió, crea el aviso (máximo 1 por semana; lo decide la base).
+  const supabase = await createClient();
+  await supabase.rpc("checkin_reminder_tick");
+  const unread = await countUnread();
 
   return (
     <div className="min-h-dvh">
@@ -15,7 +22,10 @@ export default async function PortalLayout({ children }: { children: React.React
             <LogoMark className="h-7 w-7" />
             <span className="font-display text-lg font-extrabold uppercase tracking-wide">Alpha Prime</span>
           </Link>
-          <SignOutButton compact />
+          <div className="flex items-center gap-1">
+            <NotificationsBell href="/portal/notificaciones" unread={unread} />
+            <SignOutButton compact />
+          </div>
         </div>
       </header>
       <main className="mx-auto w-full max-w-lg px-4 pb-28 pt-5">{children}</main>

@@ -72,7 +72,7 @@ export default async function CoachLayout({ children }: { children: React.ReactN
 function NotificationsLink({ unread }: { unread: number }) {
   return (
     <Link
-      href="/coach#alertas"
+      href="/coach/notificaciones"
       className="relative grid h-10 w-10 place-items-center rounded-full text-muted transition-colors hover:bg-panel-2 hover:text-fg"
       aria-label={unread ? `Alertas, ${unread} sin leer` : "Alertas"}
     >

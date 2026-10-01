@@ -2,11 +2,12 @@
 
 Plataforma de coaching nutricional y entrenamiento con dos roles: **COACH** y **CLIENTE**.
 
-**Estado: Fases 1 a 4 completas.**
+**Estado: Fases 1 a 5 completas.**
 - Fase 1: arquitectura, base de datos, autenticación, roles y dashboards.
 - Fase 2: alta/edición/suspensión de clientes, acceso por link (WhatsApp), expediente con antropometría, progreso (gráficas, antes vs actual, fotos), notas privadas, historial de cambios, y sección Progreso en el portal del cliente.
 - Fase 3: calculadora nutricional (Mifflin-St Jeor, Harris-Benedict revisada, Katch-McArdle, Cunningham) con ajuste manual del coach, constructor de dietas (comidas, gramos, macros en vivo, opciones A/B, sustituciones, copiar comida/día/plan, planes por semanas, plantillas), catálogo de alimentos, tipos de día con objetivos propios (ej. tren superior / tren inferior / descanso), auto-ajuste de cantidades (propone gramos para cumplir los objetivos con los alimentos elegidos; el coach revisa, fija y aplica), suplementación pautada por plan (producto, dosis, momento, frecuencia, indicaciones) y vista Nutrición en el portal.
 - Fase 4: constructor de rutinas (semanas × días; series, reps, peso, RIR, RPE, descanso, tempo, notas), catálogo de ejercicios base + propios, plantillas, copiar día/semana/rutina, periodización por semana con progresión automática (% o kg, RIR/RPE), registro de cargas del cliente por serie e historial de progresión (peso máximo, 1RM estimado, volumen).
+- Fase 5: check-in semanal configurable (día, campos, preguntas propias, fotos), bandeja de revisión del coach con comparación vs semana anterior y devolución, notificaciones dentro de la app (check-in pendiente/enviado/revisado, plan nuevo/actualizado).
 
 ### Acceso de clientes (Fase 2)
 Al crear un cliente se genera un **link de acceso** para compartir por WhatsApp; con él crea su contraseña en `/auth/aceptar`.
@@ -54,6 +55,8 @@ No depende del correo de Supabase (que sin SMTP propio solo envía a miembros de
    `supabase/migrations/20261001000500_supplements.sql`
    `supabase/migrations/20261001000600_day_types.sql`
    `supabase/migrations/20261001000700_training.sql`
+   `supabase/migrations/20261001000800_adductors.sql`
+   `supabase/migrations/20261001000900_checkins.sql`
 
 ## 3. Variables de entorno
 
@@ -155,6 +158,7 @@ alpha-prime-nutrition/
 - **RLS rápida en el árbol del plan:** en vez de evaluar funciones por fila, cada consulta calcula una vez el conjunto de IDs permitidos (`nutrition_scope_*`). El cliente solo ve su plan **activo**.
 - **Auto-ajuste como propuesta:** mínimos cuadrados con límites por alimento (`src/lib/nutrition/autofit.ts`), redondeo a porciones prácticas; nada se guarda sin que el coach lo aplique.
 - **Registro de cargas validado en la base:** un trigger verifica que cada serie sea de un ejercicio de la rutina ACTIVA del propio cliente y que la fecha no sea futura.
+- **Recordatorio de check-in sin tareas programadas:** `checkin_reminder_tick()` se evalúa cuando el cliente abre la app y crea como máximo un aviso por semana (no requiere cron ni servicios extra).
 - **Fórmulas y adherencia como sugerencia:** el check-in calcula una adherencia sugerida (60 % nutrición + 40 % entrenamientos), pero el coach puede sobrescribirla (`coach_adherence_override`).
 
 ## Deployment (producción)
@@ -167,7 +171,8 @@ alpha-prime-nutrition/
 
 ## Qué falta para producción
 
-- [ ] Fases 5–7 (check-ins, pagos, PWA).
+- [ ] Fases 6–7 (pagos, PWA).
+- [ ] Notificaciones por correo/push: la tabla `notifications` ya registra los canales enviados (`delivered`); falta conectar un proveedor (ej. Resend para correo, Web Push en la Fase 7).
 - [ ] **Pagos:** Stripe no lista a El Salvador como país para abrir cuenta. Opciones: empresa en un país soportado (p. ej. LLC en EE. UU.), o una pasarela disponible localmente. Confirmalo en [stripe.com/global](https://stripe.com/global) antes de la Fase 6.
 - [ ] Texto legal definitivo de privacidad y términos (revisión profesional).
 - [ ] SMTP propio en Supabase (Authentication → SMTP) para enviar correos de invitación y recuperación desde tu dominio.

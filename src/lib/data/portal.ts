@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { addDaysISO, diffDaysISO, todayISO } from "@/lib/format";
 import { hasContentAccess } from "@/lib/membership";
 import type { MembershipStatus } from "@/lib/types";
+import { parseCheckinConfig, type CheckinConfig } from "@/lib/checkin";
 
 export interface PortalContext {
   client: {
@@ -16,6 +17,7 @@ export interface PortalContext {
   };
   coachName: string;
   checkinWeekday: number;
+  checkinConfig: CheckinConfig;
   membership: MembershipStatus;
   hasAccess: boolean;
   subscription: { status: string; plan_name: string | null; amount_cents: number | null; current_period_end: string | null } | null;
@@ -30,19 +32,21 @@ export const getPortalContext = cache(async (): Promise<PortalContext | null> =>
     .maybeSingle();
   if (!client) return null;
 
-  const [{ data: coach }, { data: status }, { data: subscription }] = await Promise.all([
-    supabase.from("coaches").select("checkin_weekday, profiles:profiles!coaches_id_fkey(full_name)").eq("id", client.coach_id).maybeSingle(),
+  const [{ data: settings }, { data: status }, { data: subscription }] = await Promise.all([
+    // El cliente no lee la tabla coaches: una función segura le da solo lo necesario
+    supabase.rpc("my_checkin_settings"),
     supabase.rpc("membership_status", { p_client: client.id }),
     supabase.from("subscriptions").select("status, plan_name, amount_cents, current_period_end").eq("client_id", client.id).maybeSingle(),
   ]);
 
   const membership = (status ?? "expired") as MembershipStatus;
-  const coachProfile = coach?.profiles as unknown as { full_name: string } | null;
+  const st = (settings ?? {}) as { weekday?: number; config?: unknown; coach_name?: string | null };
 
   return {
     client,
-    coachName: coachProfile?.full_name ?? "Tu coach",
-    checkinWeekday: coach?.checkin_weekday ?? 1,
+    coachName: st.coach_name || "Tu coach",
+    checkinWeekday: st.weekday ?? 1,
+    checkinConfig: parseCheckinConfig(st.config),
     membership,
     hasAccess: hasContentAccess(membership),
     subscription,
@@ -54,7 +58,7 @@ export async function getPortalHome(clientId: string) {
   const [{ data: checkins }, { data: measurements }] = await Promise.all([
     supabase
       .from("checkins")
-      .select("week_start, submitted_at, weight_kg, adherence_score, coach_adherence_override")
+      .select("week_start, submitted_at, weight_kg, adherence_score, coach_adherence_override, status")
       .eq("client_id", clientId)
       .order("submitted_at", { ascending: false })
       .limit(4),

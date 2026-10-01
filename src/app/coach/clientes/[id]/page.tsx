@@ -28,6 +28,10 @@ import { exercisesByIds, getClientLogs, listClientWorkouts, listWorkoutTemplates
 import { WorkoutList } from "@/components/training/workout-list";
 import { NewWorkoutForm } from "@/components/training/new-workout-form";
 import { ProgressionView } from "@/components/training/progression-view";
+import { getCheckinPhotos, getClientCheckins, getCoachCheckinSettings } from "@/lib/data/checkins";
+import { parseCheckinConfig } from "@/lib/checkin";
+import { CheckinCard } from "@/components/checkin/checkin-card";
+import { ReviewForm } from "@/components/checkin/review-form";
 import {
   accessLinkAction,
   addMeasurementAction,
@@ -44,6 +48,7 @@ const TABS = [
   { id: "resumen", label: "Resumen" },
   { id: "nutricion", label: "Nutrición" },
   { id: "entrenamiento", label: "Entrenamiento" },
+  { id: "checkins", label: "Check-ins" },
   { id: "antropometria", label: "Antropometría" },
   { id: "progreso", label: "Progreso" },
   { id: "notas", label: "Notas" },
@@ -65,7 +70,8 @@ export default async function ClientProfilePage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ tab?: string; guardado?: string }>;
 }) {
-  await requireRole("coach");
+  const coachProfile = await requireRole("coach");
+  const coachIdForTabs = coachProfile.id;
   const { id } = await params;
   const sp = await searchParams;
   if (!UUID.test(id)) notFound();
@@ -162,6 +168,7 @@ export default async function ClientProfilePage({
       )}
       {tab === "nutricion" && <Nutrition id={id} />}
       {tab === "entrenamiento" && <Training id={id} />}
+      {tab === "checkins" && <Checkins id={id} coachId={coachIdForTabs} />}
       {tab === "antropometria" && <Anthropometry id={id} height={height} />}
       {tab === "progreso" && <Progress id={id} />}
       {tab === "notas" && <Notes id={id} />}
@@ -306,6 +313,24 @@ async function Training({ id }: { id: string }) {
       <WorkoutList plans={plans} empty="Todavía no hay rutinas para este cliente." />
       <h2 className="mt-2 font-display text-2xl font-extrabold uppercase tracking-tight">Progresión de cargas</h2>
       <ProgressionView logs={logs} exercises={exercises} empty="El cliente todavía no registró cargas." />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------- Check-ins
+
+async function Checkins({ id, coachId }: { id: string; coachId: string }) {
+  const [list, settings] = await Promise.all([getClientCheckins(id), getCoachCheckinSettings(coachId)]);
+  const config = parseCheckinConfig(settings.config);
+  const photos = await getCheckinPhotos(list.slice(0, 20).map((c) => c.id));
+  if (!list.length) return <Card><EmptyState title="Sin check-ins todavía" description="Cuando el cliente envíe su primer check-in aparece acá." /></Card>;
+  return (
+    <div className="flex flex-col gap-4">
+      {list.map((c, i) => (
+        <CheckinCard key={c.id} c={c} previous={list[i + 1] ?? null} photos={photos.get(c.id)} config={config}>
+          <ReviewForm checkinId={c.id} initialFeedback={c.coach_feedback} adherence={c.adherence_score} override={c.coach_adherence_override} reviewed={c.status === "reviewed"} />
+        </CheckinCard>
+      ))}
     </div>
   );
 }
