@@ -37,9 +37,12 @@ function perUnit(food: Food): FitTargets {
   return { kcal: Number(food.kcal) / r, protein: Number(food.protein_g) / r, carbs: Number(food.carbs_g) / r, fat: Number(food.fat_g) / r };
 }
 
-export function fitQuantities(items: FitItem[], targets: FitTargets): FitResult {
+/** Peso extra para los macros que el coach marca como prioridad (se cumplen primero). */
+const PRIORITY_BOOST = 40;
+
+export function fitQuantities(items: FitItem[], targets: FitTargets, priority: Partial<Record<keyof FitTargets, boolean>> = {}): FitResult {
   const t = KEYS.map((k) => Math.max(targets[k], 1));
-  const w = KEYS.map((k) => WEIGHTS[k]);
+  const w = KEYS.map((k) => WEIGHTS[k] * (priority[k] ? PRIORITY_BOOST : 1));
   const a = items.map((it) => { const p = perUnit(it.food); return KEYS.map((k) => p[k]); });
   const b = items.map((it) => unitBounds(it.food.unit));
   const x0 = items.map((it) => Math.max(Number(it.quantity) || 0, 0));

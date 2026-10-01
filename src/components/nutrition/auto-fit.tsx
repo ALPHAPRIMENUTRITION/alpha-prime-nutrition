@@ -39,6 +39,7 @@ export function AutoFit({
   const [alsoAlternatives, setAlsoAlternatives] = useState(true);
   const [pending, start] = useTransition();
   const [copyAll, setCopyAll] = useState(sameType.days.length > 0);
+  const [priority, setPriority] = useState<Record<keyof FitTargets, boolean>>({ kcal: true, protein: true, carbs: false, fat: false });
 
   const result = useMemo(() => {
     const toItems = (opt: PlanDay["meals"][number]["options"][number]): FitItem[] =>
@@ -48,7 +49,7 @@ export function AutoFit({
       });
 
     const main = day.meals.flatMap((m) => (m.options[0] ? toItems(m.options[0]) : []));
-    const fit = fitQuantities(main, targets);
+    const fit = fitQuantities(main, targets, priority);
     const q = new Map(fit.quantities);
 
     if (alsoAlternatives) {
@@ -57,13 +58,13 @@ export function AutoFit({
         if (!a || m.options.length < 2) continue;
         const aMac = optionMacros({ ...a, items: a.items.map((i) => ({ ...i, quantity: q.get(i.id) ?? i.quantity })) }, foodMap);
         for (const opt of m.options.slice(1)) {
-          const r = fitQuantities(toItems(opt), { kcal: aMac.kcal, protein: aMac.protein, carbs: aMac.carbs, fat: aMac.fat });
+          const r = fitQuantities(toItems(opt), { kcal: aMac.kcal, protein: aMac.protein, carbs: aMac.carbs, fat: aMac.fat }, priority);
           r.quantities.forEach((v, k) => q.set(k, v));
         }
       }
     }
     return { q, fit };
-  }, [day, foodMap, targets, locked, alsoAlternatives]);
+  }, [day, foodMap, targets, locked, alsoAlternatives, priority]);
 
   const updates = useMemo(() => {
     const list: { id: string; quantity: number }[] = [];
@@ -84,6 +85,26 @@ export function AutoFit({
         Propuesta de cantidades para acercarse a los objetivos del día con los alimentos que elegiste.
         <strong className="text-fg"> No se guarda nada hasta que la apliques.</strong> Fijá con el candado lo que no querés que cambie.
       </p>
+
+      <div className="flex flex-col gap-2">
+        <p className="text-sm text-muted">Cumplir primero <span className="text-faint">(lo no marcado absorbe la diferencia)</span>:</p>
+        <div className="flex flex-wrap gap-2">
+          {(["protein", "kcal", "carbs", "fat"] as (keyof FitTargets)[]).map((k) => (
+            <button
+              key={k}
+              type="button"
+              aria-pressed={priority[k]}
+              onClick={() => setPriority((x) => ({ ...x, [k]: !x[k] }))}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold",
+                priority[k] ? "border-red bg-red/10 text-fg" : "border-line text-muted hover:border-faint",
+              )}
+            >
+              {priority[k] ? <Lock size={13} /> : <LockOpen size={13} />} {LABEL[k][0]!.toUpperCase() + LABEL[k].slice(1)}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <div className="rounded-card border border-line bg-panel p-4">
         <p className="eyebrow mb-3">Resultado propuesto · opción A de cada comida</p>
