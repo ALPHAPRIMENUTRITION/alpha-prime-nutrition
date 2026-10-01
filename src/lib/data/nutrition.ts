@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { toPlanTree, type Food, type PlanMeta, type PlanTree } from "@/lib/nutrition/plan";
 
 const TREE_SELECT =
-  "*, nutrition_plan_days(id, week_number, day_number, label, meals(id, name, position, notes, meal_options(id, label, position, meal_items(id, food_id, quantity, position, food_substitutions(id, food_id, quantity, notes))))), plan_supplements(id, name, dose, timing, frequency, notes, position, created_at)";
+  "*, nutrition_plan_days(id, week_number, day_number, label, day_type_id, meals(id, name, position, notes, meal_options(id, label, position, meal_items(id, food_id, quantity, position, food_substitutions(id, food_id, quantity, notes))))), plan_supplements(id, name, dose, timing, frequency, notes, position, created_at), nutrition_day_types(id, name, target_kcal, target_protein_g, target_carbs_g, target_fat_g, position, created_at)";
 
 const META_COLS =
   "id, coach_id, client_id, name, start_date, weeks, is_active, target_kcal, target_protein_g, target_carbs_g, target_fat_g, calculation, notes, updated_at";

@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { fieldErrors } from "@/lib/validation/client";
-import { foodSchema, planMetaSchema, quantitySchema, shortText, supplementSchema, targetsSchema, uuid } from "@/lib/validation/nutrition";
+import { foodSchema, planMetaSchema, quantitySchema, shortText, supplementSchema, targetsSchema, uuid, dayTypeSchema, weekdays } from "@/lib/validation/nutrition";
 import type { Food } from "@/lib/nutrition/plan";
 import { getPlanTree } from "@/lib/data/nutrition";
 import { z } from "zod";
@@ -403,6 +403,65 @@ export async function deleteSubstitutionAction(planId: string, subId: string): P
   if (!(await guard(planId)) || !uuid.safeParse(subId).success) return fail("Sustitución inválida.");
   const supabase = await createClient();
   await supabase.from("food_substitutions").delete().eq("id", subId);
+  await touch(planId);
+  return { ok: true };
+}
+
+// ---------------------------------------------------------------- Tipos de día
+
+export async function saveDayTypeAction(
+  planId: string,
+  typeId: string | null,
+  input: Record<string, string>,
+  applyTo: number[],
+): Promise<ActionResult<string> & { fields?: Record<string, string> }> {
+  if (!(await guard(planId)) || (typeId && !uuid.safeParse(typeId).success)) return fail("Tipo de día inválido.");
+  const parsed = dayTypeSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Revisá los campos marcados.", fields: fieldErrors(parsed.error) };
+  const days = weekdays.safeParse(applyTo);
+  if (!days.success) return fail("Días inválidos.");
+  const supabase = await createClient();
+  let id = typeId;
+  if (typeId) {
+    const { data, error } = await supabase.from("nutrition_day_types").update(parsed.data).eq("id", typeId).eq("plan_id", planId).select("id");
+    if (error?.code === "23505") return { ok: false, error: "Ya existe un tipo con ese nombre.", fields: { name: "Ya existe un tipo con ese nombre" } };
+    if (error || !data?.length) return fail("No se pudo guardar el tipo de día.");
+  } else {
+    const { count } = await supabase.from("nutrition_day_types").select("id", { count: "exact", head: true }).eq("plan_id", planId);
+    if ((count ?? 0) >= 7) return fail("Máximo 7 tipos de día por plan.");
+    const { data, error } = await supabase.from("nutrition_day_types").insert({ ...parsed.data, plan_id: planId, position: count ?? 0 }).select("id").single();
+    if (error?.code === "23505") return { ok: false, error: "Ya existe un tipo con ese nombre.", fields: { name: "Ya existe un tipo con ese nombre" } };
+    if (error || !data) return fail("No se pudo crear el tipo de día.");
+    id = data.id as string;
+  }
+  if (days.data.length) {
+    const { error } = await supabase.rpc("nutrition_assign_day_type", { p_plan: planId, p_type: id, p_days: days.data });
+    if (error) return fail("Se guardó el tipo, pero no se pudo asignar a los días.");
+  }
+  await touch(planId);
+  return { ok: true, data: id! };
+}
+
+export async function deleteDayTypeAction(planId: string, typeId: string): Promise<ActionResult> {
+  if (!(await guard(planId)) || !uuid.safeParse(typeId).success) return fail("Tipo de día inválido.");
+  const supabase = await createClient();
+  const { error } = await supabase.from("nutrition_day_types").delete().eq("id", typeId).eq("plan_id", planId);
+  if (error) return fail("No se pudo eliminar el tipo de día.");
+  await touch(planId);
+  return { ok: true };
+}
+
+/** Tipo de UN día (semana + día). null = objetivos generales del plan. */
+export async function setDayTypeAction(planId: string, week: number, day: number, typeId: string | null): Promise<ActionResult> {
+  if (!(await guard(planId)) || !dayRef.safeParse({ week, day }).success || (typeId && !uuid.safeParse(typeId).success)) return fail("Día inválido.");
+  const supabase = await createClient();
+  try {
+    const dayId = await ensureDay(planId, week, day);
+    const { error } = await supabase.from("nutrition_plan_days").update({ day_type_id: typeId }).eq("id", dayId);
+    if (error) return fail("No se pudo cambiar el tipo de día.");
+  } catch {
+    return fail("No se pudo cambiar el tipo de día.");
+  }
   await touch(planId);
   return { ok: true };
 }

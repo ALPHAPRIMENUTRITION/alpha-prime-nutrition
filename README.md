@@ -5,7 +5,7 @@ Plataforma de coaching nutricional y entrenamiento con dos roles: **COACH** y **
 **Estado: Fases 1, 2 y 3 completas.**
 - Fase 1: arquitectura, base de datos, autenticación, roles y dashboards.
 - Fase 2: alta/edición/suspensión de clientes, acceso por link (WhatsApp), expediente con antropometría, progreso (gráficas, antes vs actual, fotos), notas privadas, historial de cambios, y sección Progreso en el portal del cliente.
-- Fase 3: calculadora nutricional (Mifflin-St Jeor, Harris-Benedict revisada, Katch-McArdle, Cunningham) con ajuste manual del coach, constructor de dietas (comidas, gramos, macros en vivo, opciones A/B, sustituciones, copiar comida/día/plan, planes por semanas, plantillas), catálogo de alimentos, auto-ajuste de cantidades (propone gramos para cumplir los objetivos con los alimentos elegidos; el coach revisa, fija y aplica), suplementación pautada por plan (producto, dosis, momento, frecuencia, indicaciones) y vista Nutrición en el portal.
+- Fase 3: calculadora nutricional (Mifflin-St Jeor, Harris-Benedict revisada, Katch-McArdle, Cunningham) con ajuste manual del coach, constructor de dietas (comidas, gramos, macros en vivo, opciones A/B, sustituciones, copiar comida/día/plan, planes por semanas, plantillas), catálogo de alimentos, tipos de día con objetivos propios (ej. tren superior / tren inferior / descanso), auto-ajuste de cantidades (propone gramos para cumplir los objetivos con los alimentos elegidos; el coach revisa, fija y aplica), suplementación pautada por plan (producto, dosis, momento, frecuencia, indicaciones) y vista Nutrición en el portal.
 
 ### Acceso de clientes (Fase 2)
 Al crear un cliente se genera un **link de acceso** para compartir por WhatsApp; con él crea su contraseña en `/auth/aceptar`.
@@ -51,6 +51,7 @@ No depende del correo de Supabase (que sin SMTP propio solo envía a miembros de
    `supabase/migrations/20261001000300_storage.sql`
    `supabase/migrations/20261001000400_nutrition.sql`
    `supabase/migrations/20261001000500_supplements.sql`
+   `supabase/migrations/20261001000600_day_types.sql`
 
 ## 3. Variables de entorno
 

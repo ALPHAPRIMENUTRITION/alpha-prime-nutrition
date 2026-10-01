@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Pill, RefreshCw } from "lucide-react";
 import { getPortalContext } from "@/lib/data/portal";
 import { currentPlanWeek, getActivePlanForClient, isoWeekday } from "@/lib/data/nutrition";
-import { DAY_NAMES, DAY_SHORT, dayMacros, formatQty, itemMacros, optionMacros, supplementLine, type Food } from "@/lib/nutrition/plan";
+import { DAY_NAMES, DAY_SHORT, dayMacros, formatQty, itemMacros, optionMacros, supplementLine, targetsForDay, typeColor, type Food } from "@/lib/nutrition/plan";
 import { todayISO } from "@/lib/format";
 import { Card, EmptyState } from "@/components/ui";
 import { MembershipLocked } from "@/components/portal/membership-locked";
@@ -41,6 +41,7 @@ export default async function PortalNutrition({ searchParams }: { searchParams: 
   const day = Math.min(Math.max(Number(sp.dia) || todayDay, 1), 7);
   const current = tree.days.find((d) => d.week_number === week && d.day_number === day);
   const totals = dayMacros(current, foodMap);
+  const dayInfo = targetsForDay(tree, current);
   const recentlyUpdated = Date.now() - Date.parse(tree.updated_at) < 3 * 86_400_000;
   const href = (w: number, d: number) => `/portal/nutricion?semana=${w}&dia=${d}`;
 
@@ -77,6 +78,8 @@ export default async function PortalNutrition({ searchParams }: { searchParams: 
         {DAY_SHORT.map((d, i) => {
           const on = day === i + 1;
           const isToday = week === todayWeek && i + 1 === todayDay;
+          const dt = targetsForDay(tree, tree.days.find((x) => x.week_number === week && x.day_number === i + 1)).type;
+          const color = typeColor(tree.day_types, dt?.id);
           return (
             <Link
               key={d}
@@ -87,19 +90,32 @@ export default async function PortalNutrition({ searchParams }: { searchParams: 
             >
               {d}
               <span className={cn("mt-1 h-1 w-1 rounded-full", isToday ? "bg-red" : "bg-transparent")} aria-hidden="true" />
+              <span className="mt-1 h-1.5 w-4 rounded-full" style={{ background: color ?? "transparent" }} aria-hidden="true" />
+              {dt && <span className="sr-only">{dt.name}</span>}
             </Link>
           );
         })}
       </nav>
+      {tree.day_types.length > 0 && (
+        <ul aria-label="Tipos de día" className="-mt-2 flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-muted">
+          {tree.day_types.map((t) => (
+            <li key={t.id} className="flex items-center gap-1.5">
+              <span className="h-1.5 w-4 rounded-full" style={{ background: typeColor(tree.day_types, t.id)! }} aria-hidden="true" />
+              {t.name}
+            </li>
+          ))}
+        </ul>
+      )}
 
       <Card className="p-5">
         <p className="eyebrow mb-3">
           {DAY_NAMES[day - 1]}
+          {dayInfo.type ? ` · ${dayInfo.type.name}` : ""}
           {current?.label ? ` · ${current.label}` : ""}
         </p>
         <MacroSummary
           actual={totals}
-          targets={{ kcal: tree.target_kcal, protein: tree.target_protein_g, carbs: tree.target_carbs_g, fat: tree.target_fat_g }}
+          targets={dayInfo.targets}
           compact
           caption="Total del día con la opción principal de cada comida."
         />

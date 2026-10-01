@@ -11,6 +11,7 @@ const ENTITY: Record<string, { label: string; article: string }> = {
   subscriptions: { label: "la membresía", article: "" },
   checkins: { label: "un check-in", article: "" },
   plan_supplements: { label: "un suplemento", article: "" },
+  nutrition_day_types: { label: "el tipo de día", article: "" },
 };
 
 const FIELD: Record<string, { label: string; unit?: string }> = {
@@ -84,13 +85,13 @@ export function describeAudit(row: AuditRow) {
   const who = row.actor_name || "Sistema";
   const ent = ENTITY[row.entity]?.label ?? row.entity;
   if (row.action === "insert") {
-    const named = row.entity === "nutrition_plans" || row.entity === "plan_supplements";
+    const named = row.entity === "nutrition_plans" || row.entity === "plan_supplements" || row.entity === "nutrition_day_types";
     const n = named && row.changes.name?.new ? ` "${String(row.changes.name.new)}"` : "";
     const verb = row.entity === "plan_supplements" ? "pautó" : "creó";
     return { title: `${who} ${verb} ${ent}${n}`, details: [] as string[] };
   }
   if (row.action === "delete") {
-    const n = row.entity === "plan_supplements" && row.changes.name?.old ? ` "${String(row.changes.name.old)}"` : "";
+    const n = (row.entity === "plan_supplements" || row.entity === "nutrition_day_types") && row.changes.name?.old ? ` "${String(row.changes.name.old)}"` : "";
     return { title: `${who} eliminó ${ent}${n}`, details: [] as string[] };
   }
 

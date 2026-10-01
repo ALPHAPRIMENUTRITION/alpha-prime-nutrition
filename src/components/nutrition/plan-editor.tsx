@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Calculator, CopyPlus, Pencil, Plus, Power, Trash2, Wand2 } from "lucide-react";
 import * as A from "@/app/coach/planes/actions";
 import type { PlanFormState } from "@/app/coach/planes/actions";
-import { DAY_NAMES, DAY_SHORT, dayMacros, type Food, type PlanTree } from "@/lib/nutrition/plan";
+import { DAY_NAMES, DAY_SHORT, dayMacros, targetsForDay, typeColor, type Food, type PlanTree } from "@/lib/nutrition/plan";
 import type { CalculationSnapshot } from "@/lib/nutrition/calc";
 import { Badge, Button, Card, Field, Input, Select, Textarea } from "@/components/ui";
 import { ConfirmButton } from "@/components/confirm-button";
@@ -16,6 +16,7 @@ import { MealCard, type MealHandlers } from "@/components/nutrition/meal-card";
 import { NutritionCalculator, describeCalculation, type CalcDefaults } from "@/components/nutrition/calculator";
 import { DayTargets } from "@/components/nutrition/day-targets";
 import { AutoFit } from "@/components/nutrition/auto-fit";
+import { DayTypesCard, type DayTypeHandlers } from "@/components/nutrition/day-types";
 import { SupplementsEditor, type SupplementHandlers } from "@/components/nutrition/supplements-editor";
 import { cn } from "@/lib/cn";
 
@@ -77,7 +78,8 @@ export function PlanEditor({
   const foodMap = useMemo(() => new Map(foods.map((f) => [f.id, f])), [foods]);
   const current = tree.days.find((d) => d.week_number === week && d.day_number === day);
   const totals = dayMacros(current, foodMap);
-  const targets = { kcal: tree.target_kcal, protein: tree.target_protein_g, carbs: tree.target_carbs_g, fat: tree.target_fat_g };
+  const dayInfo = targetsForDay(tree, current);
+  const targets = dayInfo.targets;
   const calc = (tree.calculation ?? null) as CalculationSnapshot | null;
   const isTemplate = !tree.client_id;
 
@@ -159,6 +161,16 @@ export function PlanEditor({
     remove: (id) => run(() => A.deleteSupplementAction(plan.id, id), "Suplemento eliminado"),
   };
 
+  const dth: DayTypeHandlers = {
+    save: async (id, input, applyTo) => {
+      await flush();
+      const res = await A.saveDayTypeAction(plan.id, id, input, applyTo);
+      if (res.ok) setToast({ text: id ? "Tipo de día actualizado" : "Tipo de día creado" });
+      return res.ok ? { ok: true } : { ok: false, error: res.error, fields: res.fields };
+    },
+    remove: (id) => run(() => A.deleteDayTypeAction(plan.id, id), "Tipo de día eliminado"),
+  };
+
   const dayHasMeals = (w: number, d: number) => (tree.days.find((x) => x.week_number === w && x.day_number === d)?.meals.length ?? 0) > 0;
 
   return (
@@ -205,15 +217,23 @@ export function PlanEditor({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="eyebrow">
             {DAY_NAMES[day - 1]}
-            {tree.weeks > 1 ? ` · semana ${week}` : ""} · plan vs objetivo
+            {tree.weeks > 1 ? ` · semana ${week}` : ""} · {dayInfo.type ? dayInfo.type.name : "objetivo general"}
           </h2>
-          <Button type="button" size="sm" onClick={() => setDialog("calc")}>
-            <Calculator size={15} /> {tree.target_kcal ? "Calcular / editar objetivos" : "Definir objetivos"}
+          <Button type="button" size="sm" variant={dayInfo.type ? "secondary" : "primary"} onClick={() => setDialog("calc")}>
+            <Calculator size={15} /> {tree.target_kcal ? "Calculadora · objetivo general" : "Definir objetivos"}
           </Button>
         </div>
         <MacroSummary actual={totals} targets={targets} caption="Total del día con la primera opción de cada comida." />
-        {calc && <p className="border-t border-line pt-3 text-xs text-faint">Cálculo: {describeCalculation(calc)}</p>}
+        {dayInfo.type ? (
+          <p className="border-t border-line pt-3 text-xs text-faint">
+            Este día usa el objetivo de <strong className="text-muted">{dayInfo.type.name}</strong>. Lo editás en Tipos de día.
+          </p>
+        ) : (
+          calc && <p className="border-t border-line pt-3 text-xs text-faint">Objetivo general · Cálculo: {describeCalculation(calc)}</p>
+        )}
       </Card>
+
+      <DayTypesCard plan={tree} days={tree.days} weeks={tree.weeks} h={dth} disabled={busy} />
 
       {/* Semanas y días */}
       <nav aria-label="Semana y día" className="flex flex-col gap-3">
@@ -236,7 +256,9 @@ export function PlanEditor({
           {DAY_SHORT.map((d, i) => {
             const on = day === i + 1;
             const has = dayHasMeals(week, i + 1);
-            const kcal = Math.round(dayMacros(tree.days.find((x) => x.week_number === week && x.day_number === i + 1), foodMap).kcal);
+            const dd = tree.days.find((x) => x.week_number === week && x.day_number === i + 1);
+            const kcal = Math.round(dayMacros(dd, foodMap).kcal);
+            const color = typeColor(tree.day_types, dd?.day_type_id);
             return (
               <button
                 key={d}
@@ -247,6 +269,7 @@ export function PlanEditor({
               >
                 <span className="font-semibold uppercase tracking-wider">{d}</span>
                 <span className="tnum mt-0.5 text-[11px] text-faint">{has ? `${kcal}` : "—"}</span>
+                <span className="mt-1 h-1.5 w-1.5 rounded-full" style={{ background: color ?? "transparent" }} aria-hidden="true" />
               </button>
             );
           })}
@@ -265,17 +288,34 @@ export function PlanEditor({
               defaultValue={current?.label ?? ""}
               placeholder="Etiqueta opcional (ej. Día de entrenamiento)"
               maxLength={60}
-              onBlur={(e) => e.target.value !== (current?.label ?? "") && run(() => A.setDayLabelAction(plan.id, week, day, e.target.value))}
+              onBlur={(e) => {
+                const label = e.target.value;
+                if (label !== (current?.label ?? "")) run(() => A.setDayLabelAction(plan.id, week, day, label));
+              }}
               className="mt-1 w-full max-w-sm border-b border-transparent bg-transparent text-sm text-muted placeholder:text-faint focus:border-line focus:outline-none"
             />
           </div>
+          <label className="sr-only" htmlFor="day_type">Tipo de día</label>
+          <select
+            id="day_type"
+            value={current?.day_type_id ?? ""}
+            disabled={busy}
+            onChange={(e) => {
+              const typeId = e.target.value || null;
+              run(() => A.setDayTypeAction(plan.id, week, day, typeId), "Tipo de día cambiado");
+            }}
+            className="h-9 rounded-full border border-line bg-panel-2 px-3 text-sm font-semibold text-fg"
+          >
+            <option value="">General</option>
+            {tree.day_types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+          </select>
           <Button
             type="button"
             size="sm"
             disabled={!current?.meals.some((m) => m.options.some((o) => o.items.length))}
             onClick={async () => {
-              if (!tree.target_kcal) {
-                setToast({ text: "Primero definí los objetivos del plan", bad: true });
+              if (!targets.kcal) {
+                setToast({ text: "Primero definí los objetivos de este día", bad: true });
                 return;
               }
               await flush();
@@ -346,12 +386,12 @@ export function PlanEditor({
         />
       </Dialog>
 
-      <Dialog open={dialog === "fit"} onClose={() => setDialog(null)} title={`Auto-ajustar ${DAY_NAMES[day - 1]}`} wide>
+      <Dialog open={dialog === "fit"} onClose={() => setDialog(null)} title={`Auto-ajustar ${DAY_NAMES[day - 1]}${dayInfo.type ? ` · ${dayInfo.type.name}` : ""}`} wide>
         {dialog === "fit" && current && (
           <AutoFit
             day={current}
             foodMap={foodMap}
-            targets={{ kcal: tree.target_kcal ?? 0, protein: tree.target_protein_g ?? 0, carbs: tree.target_carbs_g ?? 0, fat: tree.target_fat_g ?? 0 }}
+            targets={{ kcal: targets.kcal ?? 0, protein: targets.protein ?? 0, carbs: targets.carbs ?? 0, fat: targets.fat ?? 0 }}
             onApply={async (updates) => {
               const ok = await run(() => A.applyQuantitiesAction(plan.id, updates), "Cantidades ajustadas");
               if (ok) setDialog(null);

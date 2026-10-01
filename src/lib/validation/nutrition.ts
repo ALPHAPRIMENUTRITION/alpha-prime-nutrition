@@ -57,3 +57,18 @@ export const supplementSchema = z.object({
   frequency: z.preprocess(blank, z.string().trim().max(60, "Máximo 60 caracteres").optional()),
   notes: z.preprocess(blank, z.string().trim().max(500, "Máximo 500 caracteres").optional()),
 });
+
+const intField = (min: number, max: number, label: string) =>
+  z.preprocess(
+    (v) => (blank(v) === undefined ? undefined : Number(String(v).replace(",", "."))),
+    z.number({ message: `${label}: escribí un número` }).int(`${label}: sin decimales`).min(min, `${label}: mínimo ${min}`).max(max, `${label}: máximo ${max}`),
+  );
+
+export const dayTypeSchema = z.object({
+  name: z.string().trim().min(1, "Escribí un nombre").max(40, "Máximo 40 caracteres"),
+  target_kcal: intField(500, 10000, "Calorías"),
+  target_protein_g: intField(0, 600, "Proteína"),
+  target_carbs_g: intField(0, 1500, "Carbohidratos"),
+  target_fat_g: intField(0, 600, "Grasas"),
+});
+export const weekdays = z.array(z.number().int().min(1).max(7)).max(7);

@@ -66,7 +66,17 @@ export interface PlanSub { id: string; food_id: string; quantity: number; notes:
 export interface PlanItem { id: string; food_id: string; quantity: number; position: number; subs: PlanSub[] }
 export interface PlanOption { id: string; label: string; position: number; items: PlanItem[] }
 export interface PlanMeal { id: string; name: string; position: number; notes: string | null; options: PlanOption[] }
-export interface PlanDay { id: string; week_number: number; day_number: number; label: string | null; meals: PlanMeal[] }
+export interface PlanDay { id: string; week_number: number; day_number: number; label: string | null; day_type_id: string | null; meals: PlanMeal[] }
+
+export interface PlanDayType {
+  id: string;
+  name: string;
+  target_kcal: number | null;
+  target_protein_g: number | null;
+  target_carbs_g: number | null;
+  target_fat_g: number | null;
+  position: number;
+}
 
 export interface PlanMeta {
   id: string;
@@ -97,7 +107,27 @@ export interface PlanSupplement {
 
 export interface PlanTree extends PlanMeta {
   days: PlanDay[];
+  day_types: PlanDayType[];
   supplements: PlanSupplement[];
+}
+
+export interface DayTargetsInfo {
+  type: PlanDayType | null;
+  targets: { kcal: number | null; protein: number | null; carbs: number | null; fat: number | null };
+}
+
+export const TYPE_COLORS = ["#e3242f", "#3b82f6", "#3fcf8e", "#f2a93b", "#a855f7", "#14b8a6", "#ec4899"];
+/** Color fijo de cada tipo de día según su orden en el plan. */
+export function typeColor(types: PlanDayType[], id: string | null | undefined) {
+  const i = types.findIndex((t) => t.id === id);
+  return i < 0 ? null : TYPE_COLORS[i % TYPE_COLORS.length]!;
+}
+
+/** Objetivos de un día: los de su tipo de día, o los generales del plan. */
+export function targetsForDay(plan: Pick<PlanTree, "day_types" | "target_kcal" | "target_protein_g" | "target_carbs_g" | "target_fat_g">, day: Pick<PlanDay, "day_type_id"> | undefined): DayTargetsInfo {
+  const type = day?.day_type_id ? (plan.day_types.find((t) => t.id === day.day_type_id) ?? null) : null;
+  const src = type ?? plan;
+  return { type, targets: { kcal: src.target_kcal, protein: src.target_protein_g, carbs: src.target_carbs_g, fat: src.target_fat_g } };
 }
 
 /** Línea corta: "5 g · Post-entreno · Diario" */
@@ -138,6 +168,7 @@ export function toPlanTree(raw: any): PlanTree {
     week_number: d.week_number,
     day_number: d.day_number,
     label: d.label,
+    day_type_id: d.day_type_id ?? null,
     meals: (d.meals ?? [])
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .map((m: any) => ({
@@ -172,6 +203,10 @@ export function toPlanTree(raw: any): PlanTree {
   const supplements: PlanSupplement[] = [...(raw.plan_supplements ?? [])].sort((a: any, b: any) => a.position - b.position || String(a.created_at).localeCompare(String(b.created_at)))
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .map((s: any) => ({ id: s.id, name: s.name, dose: s.dose, timing: s.timing, frequency: s.frequency, notes: s.notes, position: s.position }));
-  const { nutrition_plan_days: _ignored, plan_supplements: _ignored2, ...meta } = raw;
-  return { ...(meta as PlanMeta), days, supplements };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const day_types: PlanDayType[] = [...(raw.nutrition_day_types ?? [])].sort((a: any, b: any) => a.position - b.position || String(a.created_at).localeCompare(String(b.created_at)))
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .map((t: any) => ({ id: t.id, name: t.name, target_kcal: t.target_kcal, target_protein_g: t.target_protein_g, target_carbs_g: t.target_carbs_g, target_fat_g: t.target_fat_g, position: t.position }));
+  const { nutrition_plan_days: _ignored, plan_supplements: _ignored2, nutrition_day_types: _ignored3, ...meta } = raw;
+  return { ...(meta as PlanMeta), days, day_types, supplements };
 }
