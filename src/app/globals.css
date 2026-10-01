@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+/* Identidad Alpha Prime: grafito profundo, rojo de acento, tipografía condensada deportiva.
+   Diseño de un solo tema (oscuro) por decisión de marca. */
+@theme {
+  --color-ink: #0b0b0d;
+  --color-graphite: #121215;
+  --color-panel: #18181c;
+  --color-panel-2: #202026;
+  --color-line: #2a2a31;
+  --color-fg: #f3f3f4;
+  --color-muted: #9d9da7;
+  --color-faint: #6b6b75;
+  --color-red: #e3242f;
+  --color-red-hover: #f23a44;
+  --color-red-deep: #8f1219;
+  --color-ok: #3fcf8e;
+  --color-warn: #f2a93b;
+  --color-bad: #ff5a63;
+
+  --font-display: "Big Shoulders Display", "Arial Narrow", "Roboto Condensed", system-ui, sans-serif;
+  --font-sans: "Archivo Variable", "Archivo", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --radius-card: 14px;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: var(--color-ink);
+  color: var(--color-fg);
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3 {
+  text-wrap: balance;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-red);
+  outline-offset: 2px;
+}
+
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Rótulos en mayúsculas propios de la marca */
+.eyebrow {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
