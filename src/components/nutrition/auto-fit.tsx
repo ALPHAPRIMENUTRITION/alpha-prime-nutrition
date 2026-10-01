@@ -25,16 +25,20 @@ export function AutoFit({
   day,
   foodMap,
   targets,
+  sameType,
   onApply,
 }: {
   day: PlanDay;
   foodMap: Map<string, Food>;
   targets: FitTargets;
-  onApply: (updates: { id: string; quantity: number }[]) => Promise<boolean>;
+  /** Otros días del plan con el mismo tipo de día (para copiar el resultado). */
+  sameType: { label: string; days: { week: number; day: number }[] };
+  onApply: (updates: { id: string; quantity: number }[], copyTo: { week: number; day: number }[]) => Promise<boolean>;
 }) {
   const [locked, setLocked] = useState<Set<string>>(new Set());
   const [alsoAlternatives, setAlsoAlternatives] = useState(true);
   const [pending, start] = useTransition();
+  const [copyAll, setCopyAll] = useState(sameType.days.length > 0);
 
   const result = useMemo(() => {
     const toItems = (opt: PlanDay["meals"][number]["options"][number]): FitItem[] =>
@@ -159,8 +163,27 @@ export function AutoFit({
       </div>
 
       <div className="sticky bottom-0 -mx-5 flex flex-col gap-2 border-t border-line bg-graphite px-5 py-3 sm:-mx-6 sm:px-6">
-        <Button type="button" disabled={pending || updates.length === 0} onClick={() => start(async () => void (await onApply(updates)))}>
-          {pending ? "Aplicando…" : updates.length ? `Aplicar ${updates.length} cambio(s)` : "Sin cambios para aplicar"}
+        {sameType.days.length > 0 && (
+          <label className="flex items-start gap-2 text-sm">
+            <input type="checkbox" checked={copyAll} onChange={(e) => setCopyAll(e.target.checked)} className="mt-0.5 h-4 w-4 accent-[var(--color-red)]" />
+            <span>
+              Copiar este día ya ajustado a los otros {sameType.days.length} día(s) <strong>{sameType.label}</strong> del plan
+              <span className="block text-xs text-faint">Esos días quedan con las mismas comidas y cantidades que este.</span>
+            </span>
+          </label>
+        )}
+        <Button
+          type="button"
+          disabled={pending || (updates.length === 0 && !(copyAll && sameType.days.length))}
+          onClick={() => start(async () => void (await onApply(updates, copyAll ? sameType.days : [])))}
+        >
+          {pending
+            ? "Aplicando…"
+            : updates.length
+              ? `Aplicar ${updates.length} cambio(s)${copyAll && sameType.days.length ? ` y copiar a ${sameType.days.length} día(s)` : ""}`
+              : copyAll && sameType.days.length
+                ? `Copiar a ${sameType.days.length} día(s) ${sameType.label}`
+                : "Sin cambios para aplicar"}
         </Button>
         <p className="text-center text-xs text-faint">Es una sugerencia de apoyo: después podés editar cualquier cantidad a mano.</p>
       </div>

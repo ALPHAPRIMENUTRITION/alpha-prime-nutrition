@@ -22,6 +22,13 @@ import { cn } from "@/lib/cn";
 
 const QUICK_MEALS = ["Desayuno", "Merienda AM", "Almuerzo", "Merienda PM", "Cena", "Pre-entreno", "Post-entreno"];
 
+/** Color del total del día respecto a su objetivo: ±5 % verde, ±10 % amarillo, resto rojo. */
+function kcalTone(kcal: number, target: number | null) {
+  if (!target) return "text-muted";
+  const d = Math.abs(kcal - target) / target;
+  return d <= 0.05 ? "text-ok" : d <= 0.1 ? "text-warn" : "text-bad";
+}
+
 /** Aplica cantidades aún no guardadas sobre los datos del servidor. */
 function withPending(plan: PlanTree, pending: Map<string, number>): PlanTree {
   if (!pending.size) return plan;
@@ -257,6 +264,7 @@ export function PlanEditor({
             const has = dayHasMeals(week, i + 1);
             const dd = tree.days.find((x) => x.week_number === week && x.day_number === i + 1);
             const kcal = Math.round(dayMacros(dd, foodMap).kcal);
+            const dTarget = targetsForDay(tree, dd).targets.kcal;
             const color = typeColor(tree.day_types, dd?.day_type_id);
             return (
               <button
@@ -267,7 +275,8 @@ export function PlanEditor({
                 className={cn("flex flex-col items-center rounded-xl border py-2 text-xs transition-colors", on ? "border-red bg-red/10 text-fg" : "border-line text-muted hover:border-faint")}
               >
                 <span className="font-semibold uppercase tracking-wider">{d}</span>
-                <span className="tnum mt-0.5 text-[11px] text-faint">{has ? `${kcal}` : "—"}</span>
+                <span className={cn("tnum mt-0.5 text-[11px] font-semibold", !has ? "text-faint" : kcalTone(kcal, dTarget))}>{has ? kcal.toLocaleString("es-SV") : "—"}</span>
+                {dTarget ? <span className="tnum hidden text-[10px] text-faint sm:block">obj. {dTarget.toLocaleString("es-SV")}</span> : null}
                 <span className="mt-1 h-1.5 w-1.5 rounded-full" style={{ background: color ?? "transparent" }} aria-hidden="true" />
               </button>
             );
@@ -391,8 +400,17 @@ export function PlanEditor({
             day={current}
             foodMap={foodMap}
             targets={{ kcal: targets.kcal ?? 0, protein: targets.protein ?? 0, carbs: targets.carbs ?? 0, fat: targets.fat ?? 0 }}
-            onApply={async (updates) => {
-              const ok = await run(() => A.applyQuantitiesAction(plan.id, updates), "Cantidades ajustadas");
+            sameType={{
+              label: dayInfo.type ? dayInfo.type.name : "General (sin tipo)",
+              days: Array.from({ length: tree.weeks }, (_, w) => [1, 2, 3, 4, 5, 6, 7].map((d) => ({ week: w + 1, day: d })))
+                .flat()
+                .filter((x) => !(x.week === week && x.day === day))
+                .filter((x) => (tree.days.find((y) => y.week_number === x.week && y.day_number === x.day)?.day_type_id ?? null) === (current.day_type_id ?? null)),
+            }}
+            onApply={async (updates, copyTo) => {
+              let ok = true;
+              if (updates.length) ok = await run(() => A.applyQuantitiesAction(plan.id, updates), copyTo.length ? undefined : "Cantidades ajustadas");
+              if (ok && copyTo.length) ok = await run(() => A.copyDayAction(plan.id, { week, day }, copyTo), `Ajustado y copiado a ${copyTo.length} día(s)`);
               if (ok) setDialog(null);
               return ok;
             }}
