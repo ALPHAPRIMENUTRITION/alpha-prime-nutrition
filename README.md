@@ -2,9 +2,10 @@
 
 Plataforma de coaching nutricional y entrenamiento con dos roles: **COACH** y **CLIENTE**.
 
-**Estado: Fases 1 y 2 completas.**
+**Estado: Fases 1, 2 y 3 completas.**
 - Fase 1: arquitectura, base de datos, autenticación, roles y dashboards.
 - Fase 2: alta/edición/suspensión de clientes, acceso por link (WhatsApp), expediente con antropometría, progreso (gráficas, antes vs actual, fotos), notas privadas, historial de cambios, y sección Progreso en el portal del cliente.
+- Fase 3: calculadora nutricional (Mifflin-St Jeor, Harris-Benedict revisada, Katch-McArdle, Cunningham) con ajuste manual del coach, constructor de dietas (comidas, gramos, macros en vivo, opciones A/B, sustituciones, copiar comida/día/plan, planes por semanas, plantillas), catálogo de alimentos y vista Nutrición en el portal.
 
 ### Acceso de clientes (Fase 2)
 Al crear un cliente se genera un **link de acceso** para compartir por WhatsApp; con él crea su contraseña en `/auth/aceptar`.
@@ -48,6 +49,7 @@ No depende del correo de Supabase (que sin SMTP propio solo envía a miembros de
    `supabase/migrations/20261001000100_schema.sql`
    `supabase/migrations/20261001000200_security.sql`
    `supabase/migrations/20261001000300_storage.sql`
+   `supabase/migrations/20261001000400_nutrition.sql`
 
 ## 3. Variables de entorno
 
@@ -145,6 +147,8 @@ alpha-prime-nutrition/
 
 - **Supabase en vez de backend propio:** menos piezas que mantener y pagar; Auth, Postgres y Storage en uno. Se puede migrar a Postgres propio porque todo es SQL estándar.
 - **Pagos manuales desde el día 1:** las tablas `subscriptions`/`payments` aceptan `provider = 'manual'` (efectivo, transferencia) además de `stripe`. Ver nota sobre Stripe abajo.
+- **Calculadora nutricional como apoyo, no decisión:** muestra fórmula, datos usados y resultado; el coach puede editar cualquier valor final y queda registrado como "ajuste manual" junto al cálculo original (`nutrition_plans.calculation`). Valores de alimentos base aproximados (USDA); el coach puede crear los suyos.
+- **RLS rápida en el árbol del plan:** en vez de evaluar funciones por fila, cada consulta calcula una vez el conjunto de IDs permitidos (`nutrition_scope_*`). El cliente solo ve su plan **activo**.
 - **Fórmulas y adherencia como sugerencia:** el check-in calcula una adherencia sugerida (60 % nutrición + 40 % entrenamientos), pero el coach puede sobrescribirla (`coach_adherence_override`).
 
 ## Deployment (producción)
@@ -157,7 +161,7 @@ alpha-prime-nutrition/
 
 ## Qué falta para producción
 
-- [ ] Fases 2–7 (CRUD de clientes, nutrición, entrenamiento, check-ins, pagos, PWA).
+- [ ] Fases 4–7 (entrenamiento, check-ins, pagos, PWA).
 - [ ] **Pagos:** Stripe no lista a El Salvador como país para abrir cuenta. Opciones: empresa en un país soportado (p. ej. LLC en EE. UU.), o una pasarela disponible localmente. Confirmalo en [stripe.com/global](https://stripe.com/global) antes de la Fase 6.
 - [ ] Texto legal definitivo de privacidad y términos (revisión profesional).
 - [ ] SMTP propio en Supabase (Authentication → SMTP) para enviar correos de invitación y recuperación desde tu dominio.
@@ -171,4 +175,4 @@ npm run typecheck   # TypeScript
 npm run build       # build de producción
 ```
 
-`supabase/tests/rls_smoke_test.sql` verifica el aislamiento entre usuarios sobre un Postgres local (ver comentarios del archivo).
+`supabase/tests/rls_smoke_test.sql` verifica el aislamiento entre usuarios sobre un Postgres local (ver comentarios del archivo). `supabase/tests/nutrition_smoke_test.sql` prueba copiar días/planes, activar planes y que el cliente solo vea su plan activo.

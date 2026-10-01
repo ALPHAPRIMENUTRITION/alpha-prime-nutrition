@@ -21,6 +21,9 @@ import { MeasurementForm } from "@/components/coach/measurement-form";
 import { NoteForm } from "@/components/coach/note-form";
 import { ProgressView } from "@/components/progress/progress-view";
 import { PhotoUpload } from "@/components/progress/photo-upload";
+import { listClientPlans, listTemplates } from "@/lib/data/nutrition";
+import { PlanList } from "@/components/nutrition/plan-list";
+import { NewPlanForm } from "@/components/nutrition/new-plan-form";
 import {
   accessLinkAction,
   addMeasurementAction,
@@ -35,6 +38,7 @@ export const metadata: Metadata = { title: "Perfil del cliente" };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const TABS = [
   { id: "resumen", label: "Resumen" },
+  { id: "nutricion", label: "Nutrición" },
   { id: "antropometria", label: "Antropometría" },
   { id: "progreso", label: "Progreso" },
   { id: "notas", label: "Notas" },
@@ -151,6 +155,7 @@ export default async function ClientProfilePage({
           invites={invitesEnabled()}
         />
       )}
+      {tab === "nutricion" && <Nutrition id={id} />}
       {tab === "antropometria" && <Anthropometry id={id} height={height} />}
       {tab === "progreso" && <Progress id={id} />}
       {tab === "notas" && <Notes id={id} />}
@@ -232,6 +237,36 @@ function Item({ k, v }: { k: string; v: React.ReactNode }) {
     <div className="flex justify-between gap-3">
       <dt className="text-faint">{k}</dt>
       <dd className="text-right">{v}</dd>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------- Nutrición
+
+async function Nutrition({ id }: { id: string }) {
+  const [plans, templates] = await Promise.all([listClientPlans(id), listTemplates()]);
+  const active = plans.find((p) => p.is_active);
+  return (
+    <div className="flex flex-col gap-5">
+      {active ? (
+        <Card className="flex flex-wrap items-center justify-between gap-4 p-5">
+          <div>
+            <p className="eyebrow">Plan activo</p>
+            <p className="mt-1 font-display text-2xl font-extrabold uppercase">{active.name}</p>
+            <p className="tnum text-sm text-muted">
+              {active.target_kcal ? `${active.target_kcal.toLocaleString("es-SV")} kcal · P ${active.target_protein_g} g · C ${active.target_carbs_g} g · G ${active.target_fat_g} g` : "Sin objetivos definidos"}
+            </p>
+          </div>
+          <Link href={`/coach/planes/${active.id}`} className={buttonClass("primary", "md")}>Abrir plan</Link>
+        </Card>
+      ) : (
+        <Card className="px-5 py-4 text-sm text-muted">Este cliente no tiene un plan activo. Creá uno o activá un borrador.</Card>
+      )}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="font-display text-2xl font-extrabold uppercase tracking-tight">Planes</h2>
+      </div>
+      <NewPlanForm clientId={id} templates={templates.map((t) => ({ id: t.id, name: t.name, weeks: t.weeks }))} />
+      <PlanList plans={plans} empty="Todavía no hay planes para este cliente." />
     </div>
   );
 }

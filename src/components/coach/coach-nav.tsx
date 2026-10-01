@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { LayoutDashboard, Users, ClipboardCheck, CreditCard } from "lucide-react";
+import { LayoutDashboard, Users, ClipboardCheck, CreditCard, Utensils } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 const ITEMS = [
   { label: "Panel", href: "/coach", match: (p: string, f: string | null) => p === "/coach" && !f, icon: LayoutDashboard },
   { label: "Clientes", href: "/coach?filtro=todos#clientes", match: (p: string, f: string | null) => p.startsWith("/coach/clientes") || f === "todos", icon: Users },
+  { label: "Planes", href: "/coach/planes", match: (p: string) => p.startsWith("/coach/planes") || p.startsWith("/coach/alimentos"), icon: Utensils },
   { label: "Check-ins", href: "/coach?filtro=checkin#clientes", match: (_: string, f: string | null) => f === "checkin", icon: ClipboardCheck },
   { label: "Pagos", href: "/coach?filtro=vencidos#clientes", match: (_: string, f: string | null) => f === "vencidos" || f === "por-vencer", icon: CreditCard },
 ];
@@ -22,7 +23,7 @@ export function CoachNav({ variant }: { variant: "side" | "bottom" }) {
         aria-label="Navegación principal"
         className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-graphite/95 pb-[env(safe-area-inset-bottom,0px)] backdrop-blur lg:hidden"
       >
-        <ul className="grid grid-cols-4">
+        <ul className="grid grid-cols-5">
           {ITEMS.map(({ label, href, match, icon: Icon }) => {
             const on = match(pathname, filtro);
             return (

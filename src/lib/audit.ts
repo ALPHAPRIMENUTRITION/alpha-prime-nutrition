@@ -43,6 +43,10 @@ const FIELD: Record<string, { label: string; unit?: string }> = {
   coach_adherence_override: { label: "Adherencia revisada", unit: "%" },
   coach_feedback: { label: "Comentario del coach" },
   current_period_end: { label: "Fin del periodo" },
+  name: { label: "Nombre" },
+  weeks: { label: "Semanas" },
+  is_active: { label: "Plan activo" },
+  notes: { label: "Notas" },
 };
 
 const HIDDEN = new Set(["client_id", "coach_id", "created_by", "extra", "calculation", "adherence_score", "reviewed_at", "submitted_at", "stripe_customer_id", "stripe_subscription_id"]);
@@ -55,6 +59,7 @@ const VALUE_TEXT: Record<string, string> = {
 function fmt(field: string, v: unknown) {
   if (v === null || v === undefined || v === "") return "vacío";
   if (field === "user_id") return "vinculada";
+  if (typeof v === "boolean") return v ? "sí" : "no";
   if (typeof v === "string" && VALUE_TEXT[v]) return VALUE_TEXT[v];
   const unit = FIELD[field]?.unit;
   if (typeof v === "number") return `${v.toLocaleString("es-SV")}${unit ? ` ${unit}` : ""}`;
@@ -74,7 +79,10 @@ export interface AuditRow {
 export function describeAudit(row: AuditRow) {
   const who = row.actor_name || "Sistema";
   const ent = ENTITY[row.entity]?.label ?? row.entity;
-  if (row.action === "insert") return { title: `${who} registró ${ent}`, details: [] as string[] };
+  if (row.action === "insert") {
+    const n = row.entity === "nutrition_plans" && row.changes.name?.new ? ` "${String(row.changes.name.new)}"` : "";
+    return { title: `${who} creó ${ent}${n}`, details: [] as string[] };
+  }
   if (row.action === "delete") return { title: `${who} eliminó ${ent}`, details: [] as string[] };
 
   const details = Object.entries(row.changes)
