@@ -1,34 +1,25 @@
 import type { Metadata } from "next";
-import { createClient } from "@/lib/supabase/server";
+import { Clock, ExternalLink, Lock } from "lucide-react";
 import { getPortalContext } from "@/lib/data/portal";
+import { getClientPayments, getMyPaymentInfo } from "@/lib/data/payments";
 import { formatDate, formatMoney } from "@/lib/format";
 import { MEMBERSHIP_LABEL, MEMBERSHIP_TONE } from "@/lib/membership";
-import { Badge, Button, Card, EmptyState } from "@/components/ui";
+import { payButtonLabel } from "@/lib/payments";
+import { Badge, Card, EmptyState, buttonClass } from "@/components/ui";
 import { MembershipWarning } from "@/components/portal/membership-warning";
+import { PaymentList } from "@/components/payments/payment-list";
+import { ReportPayment } from "@/components/payments/report-payment";
 
 export const metadata: Metadata = { title: "Membresía" };
-
-const PAYMENT_STATUS: Record<string, string> = {
-  succeeded: "Pagado",
-  failed: "Fallido",
-  pending: "Pendiente",
-  refunded: "Reembolsado",
-};
 
 // Esta página siempre es accesible, aunque la membresía haya vencido.
 export default async function MembershipPage() {
   const ctx = await getPortalContext();
   if (!ctx) return <Card><EmptyState title="Cuenta sin programa" /></Card>;
 
-  const supabase = await createClient();
-  const { data: payments } = await supabase
-    .from("payments")
-    .select("id, amount_cents, currency, status, description, paid_at, created_at")
-    .eq("client_id", ctx.client.id)
-    .order("created_at", { ascending: false })
-    .limit(24);
-
-  const sub = ctx.subscription;
+  const [info, payments] = await Promise.all([getMyPaymentInfo(), getClientPayments(ctx.client.id, 24)]);
+  const suspended = ctx.membership === "suspended";
+  const lastFailed = payments[0];
 
   return (
     <div className="flex flex-col gap-5">
@@ -43,49 +34,52 @@ export default async function MembershipPage() {
         <dl className="grid grid-cols-2 gap-4 text-sm">
           <div>
             <dt className="text-faint">Plan</dt>
-            <dd className="font-semibold">{sub?.plan_name ?? "Coaching mensual"}</dd>
+            <dd className="font-semibold">{info.plan_name ?? "Coaching mensual"}</dd>
           </div>
           <div>
-            <dt className="text-faint">Próximo pago</dt>
+            <dt className="text-faint">{ctx.membership === "expired" || ctx.membership === "grace" ? "Venció el" : "Activa hasta"}</dt>
             <dd className="font-semibold">{formatDate(ctx.client.renewal_date)}</dd>
           </div>
-          {sub?.amount_cents != null && (
+          {info.amount_cents != null && (
             <div>
-              <dt className="text-faint">Monto</dt>
-              <dd className="tnum font-semibold">{formatMoney(sub.amount_cents)}</dd>
+              <dt className="text-faint">Mensualidad</dt>
+              <dd className="tnum font-semibold">{formatMoney(info.amount_cents)}</dd>
             </div>
           )}
         </dl>
-        {/* El pago en línea se habilita en la fase de pagos (Stripe Checkout). */}
-        <Button size="lg" disabled className="w-full uppercase tracking-[0.12em]" aria-describedby="renew-note">
-          Renovar ahora
-        </Button>
-        <p id="renew-note" className="text-center text-xs text-faint">
-          El pago en línea estará disponible pronto. Mientras tanto, coordiná tu renovación con {ctx.coachName}.
-        </p>
+
+        {suspended ? (
+          <p className="text-center text-sm text-muted">Tu cuenta está suspendida. Hablá con {ctx.coachName} para reactivarla.</p>
+        ) : info.pending ? (
+          <div className="flex items-start gap-3 rounded-xl border border-warn/40 bg-warn/10 px-4 py-3 text-sm">
+            <Clock size={18} className="mt-0.5 shrink-0 text-warn" aria-hidden="true" />
+            <p>Avisaste que pagaste. {ctx.coachName} lo está verificando; cuando lo confirme, tu membresía se renueva y te llega una notificación.</p>
+          </div>
+        ) : info.link ? (
+          <div className="flex flex-col gap-2">
+            <a href={info.link} target="_blank" rel="noopener noreferrer" className={buttonClass("primary", "lg", "w-full uppercase tracking-[0.12em]")}>
+              {payButtonLabel(info.link)} <ExternalLink size={17} aria-hidden="true" />
+            </a>
+            <p className="flex items-center justify-center gap-1.5 text-center text-xs text-faint">
+              <Lock size={12} aria-hidden="true" /> Se abre la página de pago segura. La app no ve los datos de tu tarjeta.
+            </p>
+            {info.instructions && <p className="whitespace-pre-wrap rounded-xl bg-graphite px-4 py-3 text-sm text-muted">{info.instructions}</p>}
+            <ReportPayment amountCents={info.amount_cents} />
+          </div>
+        ) : (
+          <p className="text-center text-sm text-muted">Coordiná tu pago con {ctx.coachName}. Cuando lo registre, tu membresía se renueva.</p>
+        )}
+        {!info.pending && lastFailed?.status === "failed" && (
+          <p className="text-sm text-muted">
+            Tu último aviso de pago no se confirmó{lastFailed.note ? `: «${lastFailed.note}»` : "."}
+          </p>
+        )}
       </Card>
 
       <section className="flex flex-col gap-3">
         <h2 className="eyebrow">Historial de pagos</h2>
         <Card>
-          {payments?.length ? (
-            <ul>
-              {payments.map((p) => (
-                <li key={p.id} className="flex items-center justify-between gap-3 border-b border-line px-4 py-3 text-sm last:border-0">
-                  <div className="min-w-0">
-                    <p className="truncate font-medium">{p.description ?? "Pago de membresía"}</p>
-                    <p className="text-xs text-faint">{formatDate((p.paid_at ?? p.created_at) as string)}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="tnum font-semibold">{formatMoney(p.amount_cents)}</p>
-                    <p className={p.status === "failed" ? "text-xs text-bad" : "text-xs text-faint"}>{PAYMENT_STATUS[p.status] ?? p.status}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <EmptyState title="Sin pagos" description="Tus pagos van a aparecer acá." />
-          )}
+          {payments.length ? <PaymentList items={payments} /> : <EmptyState title="Sin pagos" description="Tus pagos van a aparecer acá." />}
         </Card>
       </section>
     </div>

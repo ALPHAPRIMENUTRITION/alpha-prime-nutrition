@@ -11,7 +11,8 @@ export default async function PortalLayout({ children }: { children: React.React
   await requireRole("client");
   // Si ya pasó el día de check-in y no lo envió, crea el aviso (máximo 1 por semana; lo decide la base).
   const supabase = await createClient();
-  await supabase.rpc("checkin_reminder_tick");
+  // Ídem para el pago: aviso 3 días antes de la renovación (máximo 1 por ciclo).
+  await Promise.all([supabase.rpc("checkin_reminder_tick"), supabase.rpc("payment_reminder_tick")]);
   const unread = await countUnread();
 
   return (

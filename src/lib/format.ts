@@ -3,6 +3,7 @@ const TZ = "America/El_Salvador";
 const dateFmt = new Intl.DateTimeFormat("es-SV", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 const shortDateFmt = new Intl.DateTimeFormat("es-SV", { day: "numeric", month: "short", timeZone: "UTC" });
 const moneyFmt = new Intl.NumberFormat("es-SV", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+const moneyFmtCents = new Intl.NumberFormat("es-SV", { style: "currency", currency: "USD", minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 /** Fechas tipo 'YYYY-MM-DD' (sin hora) → se interpretan sin zona para no correr el día. */
 export function formatDate(value: string | null | undefined, short = false) {
@@ -25,7 +26,7 @@ export function relativeDays(value: string | null | undefined) {
 }
 
 export function formatMoney(cents: number) {
-  return moneyFmt.format(cents / 100);
+  return (cents % 100 === 0 ? moneyFmt : moneyFmtCents).format(cents / 100);
 }
 
 export function formatKg(v: number | null | undefined) {

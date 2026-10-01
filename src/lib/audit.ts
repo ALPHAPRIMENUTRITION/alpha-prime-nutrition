@@ -23,6 +23,8 @@ const FIELD: Record<string, { label: string; unit?: string }> = {
   status: { label: "Estado" },
   start_date: { label: "Fecha de inicio" },
   renewal_date: { label: "Fecha de renovación" },
+  payment_link: { label: "Link de pago" },
+  payment_amount_cents: { label: "Monto mensual" },
   user_id: { label: "Cuenta de acceso" },
   birth_date: { label: "Fecha de nacimiento" },
   sex: { label: "Sexo" },
@@ -64,6 +66,7 @@ const VALUE_TEXT: Record<string, string> = {
 function fmt(field: string, v: unknown) {
   if (v === null || v === undefined || v === "") return "vacío";
   if (field === "user_id") return "vinculada";
+  if (field === "payment_amount_cents" && typeof v === "number") return `US$ ${(v / 100).toFixed(2)}`;
   if (typeof v === "boolean") return v ? "sí" : "no";
   if (typeof v === "string" && VALUE_TEXT[v]) return VALUE_TEXT[v];
   const unit = FIELD[field]?.unit;

@@ -17,6 +17,7 @@ const ICON: Record<string, typeof Bell> = {
   payment_failed: CreditCard,
   membership_expired: CreditCard,
   renewal_success: CreditCard,
+  payment_reported: CreditCard,
 };
 
 export function NotificationsList({ items }: { items: NotificationRow[] }) {

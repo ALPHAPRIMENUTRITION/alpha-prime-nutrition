@@ -10,7 +10,7 @@ const ITEMS = [
   { label: "Clientes", href: "/coach?filtro=todos#clientes", match: (p: string, f: string | null) => p.startsWith("/coach/clientes") || f === "todos", icon: Users },
   { label: "Planes", href: "/coach/planes", match: (p: string) => ["/coach/planes", "/coach/alimentos", "/coach/rutinas", "/coach/ejercicios"].some((x) => p.startsWith(x)), icon: Utensils },
   { label: "Check-ins", href: "/coach/checkins", match: (p: string, f: string | null) => p.startsWith("/coach/checkins") || f === "checkin", icon: ClipboardCheck },
-  { label: "Pagos", href: "/coach?filtro=vencidos#clientes", match: (_: string, f: string | null) => f === "vencidos" || f === "por-vencer", icon: CreditCard },
+  { label: "Pagos", href: "/coach/pagos", match: (p: string) => p.startsWith("/coach/pagos"), icon: CreditCard },
 ];
 
 export function CoachNav({ variant }: { variant: "side" | "bottom" }) {

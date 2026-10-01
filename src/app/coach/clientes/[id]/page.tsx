@@ -9,7 +9,7 @@ import { getProgressData } from "@/lib/data/progress";
 import { programWeek } from "@/lib/data/portal";
 import { ageFrom, bmi, SEX_LABEL } from "@/lib/anthropometry";
 import { describeAudit, type AuditRow } from "@/lib/audit";
-import { formatDate, formatKg, formatPct, relativeDays } from "@/lib/format";
+import { formatDate, formatKg, formatMoney, formatPct, relativeDays } from "@/lib/format";
 import { MEMBERSHIP_LABEL, MEMBERSHIP_TONE } from "@/lib/membership";
 import { MEASUREMENT_FIELDS } from "@/lib/validation/client";
 import type { ClientOverviewRow } from "@/lib/types";
@@ -32,6 +32,9 @@ import { getCheckinPhotos, getClientCheckins, getCoachCheckinSettings } from "@/
 import { parseCheckinConfig } from "@/lib/checkin";
 import { CheckinCard } from "@/components/checkin/checkin-card";
 import { ReviewForm } from "@/components/checkin/review-form";
+import { getClientPayments, getCoachPaymentSettings } from "@/lib/data/payments";
+import { ClientPaymentForm, PendingPaymentActions, RegisterPaymentForm } from "@/components/payments/coach-forms";
+import { PaymentList } from "@/components/payments/payment-list";
 import {
   accessLinkAction,
   addMeasurementAction,
@@ -49,6 +52,7 @@ const TABS = [
   { id: "nutricion", label: "Nutrición" },
   { id: "entrenamiento", label: "Entrenamiento" },
   { id: "checkins", label: "Check-ins" },
+  { id: "pagos", label: "Pagos" },
   { id: "antropometria", label: "Antropometría" },
   { id: "progreso", label: "Progreso" },
   { id: "notas", label: "Notas" },
@@ -169,6 +173,7 @@ export default async function ClientProfilePage({
       {tab === "nutricion" && <Nutrition id={id} />}
       {tab === "entrenamiento" && <Training id={id} />}
       {tab === "checkins" && <Checkins id={id} coachId={coachIdForTabs} />}
+      {tab === "pagos" && <Payments id={id} coachId={coachIdForTabs} renewal={client.renewal_date} />}
       {tab === "antropometria" && <Anthropometry id={id} height={height} />}
       {tab === "progreso" && <Progress id={id} />}
       {tab === "notas" && <Notes id={id} />}
@@ -318,6 +323,61 @@ async function Training({ id }: { id: string }) {
 }
 
 // ---------------------------------------------------------------- Check-ins
+
+// ---------------------------------------------------------------- Pagos
+
+async function Payments({ id, coachId, renewal }: { id: string; coachId: string; renewal: string | null }) {
+  const supabase = await createClient();
+  const [settings, payments, { data: own }] = await Promise.all([
+    getCoachPaymentSettings(coachId),
+    getClientPayments(id),
+    supabase.from("clients").select("payment_link, payment_amount_cents").eq("id", id).maybeSingle(),
+  ]);
+  const pending = payments.filter((p) => p.status === "pending");
+  const history = payments.filter((p) => p.status !== "pending");
+  const amount = own?.payment_amount_cents ?? settings.payment_amount_cents;
+
+  return (
+    <div className="flex flex-col gap-5">
+      <Card className="flex flex-wrap items-center justify-between gap-3 p-5">
+        <div>
+          <p className="text-sm text-muted">Próxima renovación</p>
+          <p className="font-display text-2xl font-extrabold uppercase">{formatDate(renewal)}</p>
+        </div>
+        <p className="text-sm text-muted">
+          Mensualidad: <span className="tnum font-semibold text-fg">{amount != null ? formatMoney(amount) : "sin definir"}</span>
+          {own?.payment_link ? " · link propio" : settings.payment_link ? " · link general" : " · sin link"}
+        </p>
+      </Card>
+
+      {pending.map((p) => (
+        <Card key={p.id} className="flex flex-col gap-3 border-warn/40 p-5">
+          <p className="font-semibold">
+            Avisó que pagó <span className="tnum">{formatMoney(p.amount_cents)}</span> {relativeDays(p.created_at).toLowerCase()}
+            {p.reference ? <span className="font-normal text-muted"> · Ref. {p.reference}</span> : null}
+          </p>
+          <PendingPaymentActions paymentId={p.id} clientId={id} />
+        </Card>
+      ))}
+
+      <Card className="flex flex-col gap-3 p-5">
+        <p className="font-semibold">Registrar un pago</p>
+        <p className="text-sm text-muted">Para pagos en efectivo, transferencia o un cobro de Cubo que el cliente no avisó. La renovación avanza los meses que elijas.</p>
+        <RegisterPaymentForm clientId={id} defaultAmountCents={amount} />
+      </Card>
+
+      <section className="flex flex-col gap-3">
+        <h2 className="eyebrow">Historial</h2>
+        <Card>{history.length ? <PaymentList items={history} /> : <EmptyState title="Sin pagos registrados" />}</Card>
+      </section>
+
+      <Card className="flex flex-col gap-3 p-5">
+        <p className="font-semibold">Link y monto de este cliente</p>
+        <ClientPaymentForm clientId={id} link={own?.payment_link ?? null} amountCents={own?.payment_amount_cents ?? null} defaults={{ link: settings.payment_link, amount_cents: settings.payment_amount_cents }} />
+      </Card>
+    </div>
+  );
+}
 
 async function Checkins({ id, coachId }: { id: string; coachId: string }) {
   const [list, settings] = await Promise.all([getClientCheckins(id), getCoachCheckinSettings(coachId)]);
