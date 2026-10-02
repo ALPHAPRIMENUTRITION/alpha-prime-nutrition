@@ -1,32 +1,37 @@
-// Genera los íconos de la PWA a partir del monograma de la marca.
-// Uso: node scripts/generate-icons.mjs
+// Genera el logo de la app y los íconos de la PWA a partir del escudo de la marca.
+// Uso: node scripts/generate-icons.mjs   (fuente: brand-src/logo-original.webp)
 import sharp from "sharp";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, rmSync } from "node:fs";
 
-const GLYPH = `
-  <path d="M20 7 L32 33 H26.5 L20 18.5 L13.5 33 H8 Z" fill="#f3f3f4"/>
-  <path d="M11 27 L31 21 L30 25 L10 31 Z" fill="#e3242f"/>`;
-
-// Ícono normal: fondo a sangre (Android/iOS recortan las esquinas)
-const full = (scale) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
-  <rect width="40" height="40" fill="#18181c"/>
-  <g transform="translate(20 20) scale(${scale}) translate(-20 -20)">${GLYPH}</g></svg>`;
-
-// Favicon: igual al de la app (esquinas redondeadas)
-const favicon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
-  <rect width="40" height="40" rx="9" fill="#18181c"/>${GLYPH}</svg>`;
-
+const SRC = "brand-src/logo-original.webp";
+const BG = "#0b0b0d";
 mkdirSync("public/icons", { recursive: true });
-const out = [
-  ["public/icons/icon-192.png", full(0.86), 192],
-  ["public/icons/icon-512.png", full(0.86), 512],
-  // "maskable": el contenido dentro de la zona segura (círculo del 80 %)
-  ["public/icons/maskable-512.png", full(0.62), 512],
-  ["public/icons/apple-touch-icon.png", full(0.8), 180],
-];
-for (const [file, svg, size] of out) {
-  await sharp(Buffer.from(svg)).resize(size, size).png({ compressionLevel: 9 }).toFile(file);
-  console.log("ok", file);
+mkdirSync("public/brand", { recursive: true });
+
+const square = (size, file) => sharp(SRC).resize(size, size).png({ compressionLevel: 9 }).toFile(file);
+
+// Escudo circular con fondo transparente (para usar dentro de la app)
+async function round(size, file) {
+  const mask = Buffer.from(`<svg width="${size}" height="${size}"><circle cx="${size / 2}" cy="${size / 2}" r="${size / 2 - size * 0.004}" fill="#fff"/></svg>`);
+  await sharp(SRC).resize(size, size).composite([{ input: mask, blend: "dest-in" }]).webp({ quality: 86 }).toFile(file);
 }
-writeFileSync("src/app/icon.svg", favicon);
-console.log("ok src/app/icon.svg");
+
+// "maskable": el escudo dentro de la zona segura (80 %) sobre fondo de marca
+async function maskable(size, file) {
+  const inner = Math.round(size * 0.8);
+  const logo = await sharp(SRC).resize(inner, inner).png().toBuffer();
+  await sharp({ create: { width: size, height: size, channels: 4, background: BG } })
+    .composite([{ input: logo, gravity: "center" }])
+    .png({ compressionLevel: 9 })
+    .toFile(file);
+}
+
+await round(512, "public/brand/logo-512.webp");
+await round(160, "public/brand/logo-160.webp");
+await square(192, "public/icons/icon-192.png");
+await square(512, "public/icons/icon-512.png");
+await square(180, "public/icons/apple-touch-icon.png");
+await square(48, "public/icons/favicon-48.png");
+await maskable(512, "public/icons/maskable-512.png");
+rmSync("src/app/icon.svg", { force: true });
+console.log("íconos generados");

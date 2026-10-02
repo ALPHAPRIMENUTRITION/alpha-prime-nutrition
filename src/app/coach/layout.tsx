@@ -46,7 +46,7 @@ export default async function CoachLayout({ children }: { children: React.ReactN
         {/* Barra superior (móvil) */}
         <header className="sticky top-0 z-20 flex items-center justify-between border-b border-line bg-ink/90 px-4 pb-3 pt-[calc(env(safe-area-inset-top,0px)+12px)] backdrop-blur lg:hidden">
           <Link href="/coach" className="flex items-center gap-2" aria-label="Panel">
-            <LogoMark className="h-7 w-7" />
+            <LogoMark className="h-9 w-9" />
             <span className="font-display text-lg font-extrabold uppercase tracking-wide">Alpha Prime</span>
           </Link>
           <div className="flex items-center gap-1">

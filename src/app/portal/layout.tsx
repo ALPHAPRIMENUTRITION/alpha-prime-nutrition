@@ -21,7 +21,7 @@ export default async function PortalLayout({ children }: { children: React.React
       <header className="sticky top-0 z-20 border-b border-line bg-ink/90 backdrop-blur">
         <div className="mx-auto flex max-w-lg items-center justify-between px-4 pb-3 pt-[calc(env(safe-area-inset-top,0px)+12px)]">
           <Link href="/portal" className="flex items-center gap-2" aria-label="Inicio">
-            <LogoMark className="h-7 w-7" />
+            <LogoMark className="h-9 w-9" />
             <span className="font-display text-lg font-extrabold uppercase tracking-wide">Alpha Prime</span>
           </Link>
           <div className="flex items-center gap-1">

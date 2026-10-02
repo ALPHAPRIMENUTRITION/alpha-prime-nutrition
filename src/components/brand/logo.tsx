@@ -1,25 +1,37 @@
 import { cn } from "@/lib/cn";
 
-/** Marca: monograma "A" con corte diagonal rojo + nombre en condensada. */
-export function LogoMark({ className }: { className?: string }) {
+/** Escudo de la marca (imagen circular). Se usa chico en barras y grande en las pantallas de acceso. */
+export function LogoMark({ className, large = false }: { className?: string; large?: boolean }) {
   return (
-    <svg viewBox="0 0 40 40" aria-hidden="true" className={cn("h-8 w-8", className)}>
-      <rect width="40" height="40" rx="9" fill="#18181c" />
-      <path d="M20 7 L32 33 H26.5 L20 18.5 L13.5 33 H8 Z" fill="#f3f3f4" />
-      <path d="M11 27 L31 21 L30 25 L10 31 Z" fill="#e3242f" />
-    </svg>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={large ? "/brand/logo-512.webp" : "/brand/logo-160.webp"}
+      alt=""
+      aria-hidden="true"
+      width={large ? 512 : 160}
+      height={large ? 512 : 160}
+      decoding="async"
+      className={cn("h-8 w-8 shrink-0 rounded-full", className)}
+    />
   );
 }
 
 export function Logo({ withTagline = false, className }: { withTagline?: boolean; className?: string }) {
+  // Pantallas de acceso: escudo grande, que ya incluye el nombre
+  if (withTagline) {
+    return (
+      <div className={cn("flex flex-col items-start gap-3", className)}>
+        <LogoMark large className="h-28 w-28 shadow-[0_0_40px_rgba(227,36,47,0.18)]" />
+        <span className="sr-only">Alpha Prime Nutrition</span>
+        <div className="eyebrow !text-[10px] !tracking-[0.28em]">Unleash your power</div>
+      </div>
+    );
+  }
   return (
     <div className={cn("flex items-center gap-2.5", className)}>
-      <LogoMark />
-      <div className="leading-none">
-        <div className="font-display text-[19px] font-extrabold uppercase tracking-[0.04em]">
-          Alpha Prime <span className="text-red">Nutrition</span>
-        </div>
-        {withTagline && <div className="eyebrow mt-1 !text-[10px] !tracking-[0.28em]">Unleash your power</div>}
+      <LogoMark className="h-10 w-10" />
+      <div className="font-display text-[19px] font-extrabold uppercase leading-none tracking-[0.04em]">
+        Alpha Prime <span className="text-red">Nutrition</span>
       </div>
     </div>
   );
