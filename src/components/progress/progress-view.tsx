@@ -9,6 +9,8 @@ import { LineChart } from "@/components/charts/line-chart";
 import { ConfirmButton } from "@/components/confirm-button";
 import { deletePhotoAction } from "@/app/coach/clientes/actions";
 import { withWeightInLb } from "@/lib/units";
+import { snapshotsByDate } from "@/lib/comparison";
+import { Comparison } from "@/components/progress/comparison";
 
 const POSE: Record<ProgressPhoto["pose"], string> = { front: "Frente", side: "Perfil", back: "Espalda", other: "Otra" };
 
@@ -30,7 +32,9 @@ export function ProgressView({
   clientId,
   canManagePhotos = false,
   uploader,
+  heightCm = null,
 }: {
+  heightCm?: number | null;
   rows: MeasurementRow[];
   photos: ProgressPhoto[];
   clientId: string;
@@ -56,6 +60,7 @@ export function ProgressView({
 
   return (
     <div className="flex flex-col gap-6">
+      <Comparison snapshots={snapshotsByDate(rowsKg, heightCm)} />
       {/* Antes vs actual */}
       <section aria-label="Inicial y actual" className="grid gap-3 sm:grid-cols-3">
         {main.map((m) => {

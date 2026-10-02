@@ -41,16 +41,26 @@ export const newClientSchema = clientSchema.and(
 export type ClientInput = z.infer<typeof clientSchema>;
 
 export const MEASUREMENT_FIELDS = [
-  { key: "weight_kg", label: "Peso", unit: "lb", min: 40, max: 900 },
-  { key: "body_fat_pct", label: "% grasa", unit: "%", min: 2, max: 75 },
-  { key: "neck_cm", label: "Cuello", unit: "cm", min: 10, max: 100 },
-  { key: "shoulders_cm", label: "Hombros", unit: "cm", min: 40, max: 250 },
-  { key: "chest_cm", label: "Pecho", unit: "cm", min: 40, max: 250 },
-  { key: "arm_cm", label: "Brazo", unit: "cm", min: 10, max: 100 },
-  { key: "waist_cm", label: "Cintura", unit: "cm", min: 30, max: 250 },
-  { key: "hip_cm", label: "Cadera", unit: "cm", min: 40, max: 250 },
-  { key: "thigh_cm", label: "Muslo", unit: "cm", min: 20, max: 150 },
-  { key: "calf_cm", label: "Pantorrilla", unit: "cm", min: 15, max: 100 },
+  { key: "weight_kg", label: "Peso", unit: "lb", min: 40, max: 900, group: "basic" },
+  { key: "body_fat_pct", label: "% grasa", unit: "%", min: 2, max: 75, group: "basic" },
+  { key: "biceps_mm", label: "Bicipital", unit: "mm", min: 1, max: 80, group: "fold" },
+  { key: "triceps_mm", label: "Tricipital", unit: "mm", min: 1, max: 80, group: "fold" },
+  { key: "subscapular_mm", label: "Subescapular", unit: "mm", min: 1, max: 80, group: "fold" },
+  { key: "suprailiac_mm", label: "Suprailíaco", unit: "mm", min: 1, max: 80, group: "fold" },
+  { key: "neck_cm", label: "Cuello", unit: "cm", min: 10, max: 100, group: "circ" },
+  { key: "shoulders_cm", label: "Hombros", unit: "cm", min: 40, max: 250, group: "circ" },
+  { key: "chest_cm", label: "Pecho", unit: "cm", min: 40, max: 250, group: "circ" },
+  { key: "arm_cm", label: "Brazo", unit: "cm", min: 10, max: 100, group: "circ" },
+  { key: "waist_cm", label: "Cintura", unit: "cm", min: 30, max: 250, group: "circ" },
+  { key: "hip_cm", label: "Cadera", unit: "cm", min: 40, max: 250, group: "circ" },
+  { key: "thigh_cm", label: "Muslo", unit: "cm", min: 20, max: 150, group: "circ" },
+  { key: "calf_cm", label: "Pantorrilla", unit: "cm", min: 15, max: 100, group: "circ" },
+] as const;
+
+export const MEASUREMENT_GROUPS = [
+  { id: "basic", label: "Peso y composición" },
+  { id: "fold", label: "Pliegues cutáneos" },
+  { id: "circ", label: "Circunferencias" },
 ] as const;
 
 export type MeasurementKey = (typeof MEASUREMENT_FIELDS)[number]["key"];

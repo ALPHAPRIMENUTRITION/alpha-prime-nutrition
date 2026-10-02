@@ -38,6 +38,10 @@ export interface MeasurementRow {
   hip_cm: number | null;
   thigh_cm: number | null;
   calf_cm: number | null;
+  biceps_mm: number | null;
+  triceps_mm: number | null;
+  subscapular_mm: number | null;
+  suprailiac_mm: number | null;
   extra: Record<string, number>;
   notes: string | null;
 }
@@ -51,7 +55,9 @@ export function mergeMeasurements(measurements: M[], bodyComp: B[]): Measurement
     id: m.id, bodyCompId: null, measured_at: m.measured_at,
     weight_kg: num(m.weight_kg), body_fat_pct: null, neck_cm: num(m.neck_cm), shoulders_cm: num(m.shoulders_cm),
     chest_cm: num(m.chest_cm), arm_cm: num(m.arm_cm), waist_cm: num(m.waist_cm), hip_cm: num(m.hip_cm),
-    thigh_cm: num(m.thigh_cm), calf_cm: num(m.calf_cm), extra: (m.extra ?? {}) as Record<string, number>, notes: m.notes ?? null,
+    thigh_cm: num(m.thigh_cm), calf_cm: num(m.calf_cm),
+    biceps_mm: num(m.biceps_mm), triceps_mm: num(m.triceps_mm), subscapular_mm: num(m.subscapular_mm), suprailiac_mm: num(m.suprailiac_mm),
+    extra: (m.extra ?? {}) as Record<string, number>, notes: m.notes ?? null,
   }));
   // El % grasa se une a la última medición de esa misma fecha que aún no lo tenga
   for (const b of bodyComp) {
@@ -63,7 +69,7 @@ export function mergeMeasurements(measurements: M[], bodyComp: B[]): Measurement
       rows.push({
         id: null, bodyCompId: b.id, measured_at: b.measured_at, weight_kg: null, body_fat_pct: num(b.body_fat_pct),
         neck_cm: null, shoulders_cm: null, chest_cm: null, arm_cm: null, waist_cm: null, hip_cm: null, thigh_cm: null,
-        calf_cm: null, extra: {}, notes: null,
+        calf_cm: null, biceps_mm: null, triceps_mm: null, subscapular_mm: null, suprailiac_mm: null, extra: {}, notes: null,
       });
     }
   }

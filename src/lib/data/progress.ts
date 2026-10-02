@@ -10,17 +10,18 @@ export interface ProgressPhoto {
 }
 
 /** Mediciones, composición y fotos de un cliente. RLS decide si quien consulta puede verlas. */
-export async function getProgressData(clientId: string): Promise<{ rows: MeasurementRow[]; photos: ProgressPhoto[] }> {
+export async function getProgressData(clientId: string): Promise<{ rows: MeasurementRow[]; photos: ProgressPhoto[]; heightCm: number | null }> {
   const supabase = await createClient();
-  const [{ data: m }, { data: b }, { data: p }] = await Promise.all([
+  const [{ data: m }, { data: b }, { data: p }, { data: prof }] = await Promise.all([
     supabase
       .from("measurements")
-      .select("id, measured_at, weight_kg, neck_cm, shoulders_cm, chest_cm, arm_cm, waist_cm, hip_cm, thigh_cm, calf_cm, extra, notes")
+      .select("id, measured_at, weight_kg, neck_cm, shoulders_cm, chest_cm, arm_cm, waist_cm, hip_cm, thigh_cm, calf_cm, biceps_mm, triceps_mm, subscapular_mm, suprailiac_mm, extra, notes")
       .eq("client_id", clientId)
       .order("measured_at")
       .order("created_at"),
     supabase.from("body_composition").select("id, measured_at, body_fat_pct").eq("client_id", clientId).order("measured_at").order("created_at"),
     supabase.from("progress_photos").select("id, pose, taken_at, storage_path").eq("client_id", clientId).order("taken_at"),
+    supabase.from("client_profiles").select("height_cm").eq("client_id", clientId).maybeSingle(),
   ]);
 
   const photos = p ?? [];
@@ -34,6 +35,7 @@ export async function getProgressData(clientId: string): Promise<{ rows: Measure
 
   return {
     rows: mergeMeasurements((m ?? []) as never, (b ?? []) as never),
+    heightCm: prof?.height_cm != null ? Number(prof.height_cm) : null,
     photos: photos.map((x) => ({ id: x.id, pose: x.pose, taken_at: x.taken_at, url: urls[x.storage_path] ?? null })),
   };
 }

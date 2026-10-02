@@ -15,7 +15,7 @@ export default async function PortalProgress() {
   if (!ctx) return <Card><EmptyState title="Cuenta sin programa" /></Card>;
   if (!ctx.hasAccess) return <MembershipLocked suspended={ctx.membership === "suspended"} />;
 
-  const { rows, photos } = await getProgressData(ctx.client.id);
+  const { rows, photos, heightCm } = await getProgressData(ctx.client.id);
   const w = firstLast(withWeightInLb(rows), "weight_kg");
 
   return (
@@ -31,7 +31,7 @@ export default async function PortalProgress() {
         )}
       </header>
       {rows.length || photos.length ? (
-        <ProgressView rows={rows} photos={photos} clientId={ctx.client.id} />
+        <ProgressView rows={rows} photos={photos} clientId={ctx.client.id} heightCm={heightCm} />
       ) : (
         <Card><EmptyState title="Aún sin mediciones" description="Cuando tu coach registre tus medidas, vas a ver acá tu evolución." /></Card>
       )}

@@ -37,6 +37,8 @@ import { getClientPayments, getCoachPaymentSettings } from "@/lib/data/payments"
 import { ClientPaymentForm, PendingPaymentActions, RegisterPaymentForm } from "@/components/payments/coach-forms";
 import { PaymentList } from "@/components/payments/payment-list";
 import { serviceLabel } from "@/lib/services";
+import { snapshotsByDate } from "@/lib/comparison";
+import { Comparison } from "@/components/progress/comparison";
 import {
   accessLinkAction,
   addMeasurementAction,
@@ -414,13 +416,14 @@ async function Checkins({ id, coachId }: { id: string; coachId: string }) {
 // ---------------------------------------------------------------- Antropometría
 
 async function Anthropometry({ id, height }: { id: string; height: number | null }) {
-  const { rows } = await getProgressData(id);
+  const { rows, heightCm } = await getProgressData(id);
   const history = [...rows].reverse();
   const used = MEASUREMENT_FIELDS.filter((f) => rows.some((r) => r[f.key] != null));
 
   return (
     <div className="flex flex-col gap-5">
       <MeasurementForm action={addMeasurementAction.bind(null, id)} />
+      <Comparison snapshots={snapshotsByDate(rows, heightCm ?? height)} />
       <Card className="p-0">
         {history.length ? (
           <div className="overflow-x-auto">
@@ -480,8 +483,8 @@ async function Anthropometry({ id, height }: { id: string; height: number | null
 // ---------------------------------------------------------------- Progreso
 
 async function Progress({ id }: { id: string }) {
-  const { rows, photos } = await getProgressData(id);
-  return <ProgressView rows={rows} photos={photos} clientId={id} canManagePhotos uploader={<PhotoUpload clientId={id} />} />;
+  const { rows, photos, heightCm } = await getProgressData(id);
+  return <ProgressView rows={rows} photos={photos} clientId={id} heightCm={heightCm} canManagePhotos uploader={<PhotoUpload clientId={id} />} />;
 }
 
 // ---------------------------------------------------------------- Notas

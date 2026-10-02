@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useState } from "react";
 import { Plus } from "lucide-react";
 import type { FormState } from "@/app/coach/clientes/actions";
-import { MEASUREMENT_FIELDS } from "@/lib/validation/client";
+import { MEASUREMENT_FIELDS, MEASUREMENT_GROUPS } from "@/lib/validation/client";
 import { todayISO } from "@/lib/format";
 import { Button, Field, Input } from "@/components/ui";
 
@@ -41,13 +41,18 @@ export function MeasurementForm({ action }: { action: Action }) {
         <p className="pb-3 text-xs text-faint">Completá solo las medidas que tomaste.</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        {MEASUREMENT_FIELDS.map((m) => (
-          <Field key={m.key} label={`${m.label} (${m.unit})`} htmlFor={`m_${m.key}`} error={f[m.key]}>
-            <Input id={`m_${m.key}`} name={m.key} type="number" inputMode="decimal" step="0.1" defaultValue={v[m.key] ?? ""} />
-          </Field>
-        ))}
-      </div>
+      {MEASUREMENT_GROUPS.map((g) => (
+        <fieldset key={g.id} className="flex flex-col gap-3">
+          <legend className="eyebrow mb-1">{g.label}</legend>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {MEASUREMENT_FIELDS.filter((m) => m.group === g.id).map((m) => (
+              <Field key={m.key} label={`${m.label} (${m.unit})`} htmlFor={`m_${m.key}`} error={f[m.key]}>
+                <Input id={`m_${m.key}`} name={m.key} type="number" inputMode="decimal" step="any" defaultValue={v[m.key] ?? ""} />
+              </Field>
+            ))}
+          </div>
+        </fieldset>
+      ))}
 
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Método del % grasa" htmlFor="fat_method" error={f.fat_method}>
