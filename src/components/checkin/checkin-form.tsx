@@ -7,6 +7,7 @@ import { submitCheckinAction } from "@/app/portal/checkin/actions";
 import { createClient } from "@/lib/supabase/client";
 import { kgToLb, type CheckinConfig, type CheckinRow, type StandardKey } from "@/lib/checkin";
 import { todayISO } from "@/lib/format";
+import { lbToKg } from "@/lib/units";
 import { Button, Field, Input, Textarea } from "@/components/ui";
 import { cn } from "@/lib/cn";
 
@@ -47,7 +48,7 @@ export function CheckinForm({
   const router = useRouter();
   const show = (k: StandardKey) => !config.hidden.includes(k);
   const [v, setV] = useState({
-    weight_kg: str(existing?.weight_kg),
+    weight_lb: str(existing?.weight_kg != null ? kgToLb(existing.weight_kg) : null),
     waist_cm: str(existing?.waist_cm),
     nutrition_adherence_pct: str(existing?.nutrition_adherence_pct ?? 80),
     workouts_completed: str(existing?.workouts_completed ?? suggestedCompleted),
@@ -67,13 +68,18 @@ export function CheckinForm({
   const [stage, setStage] = useState<string | null>(null);
 
   const set = (k: keyof typeof v) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setV((x) => ({ ...x, [k]: e.target.value }));
-  const lb = Number(v.weight_kg.replace(",", ".")) > 0 ? kgToLb(Number(v.weight_kg.replace(",", "."))) : null;
+  // El cliente escribe libras; se guarda en kg
+  const toKg = (s: string) => {
+    const n = Number(s.replace(",", "."));
+    return s.trim() === "" ? "" : Number.isFinite(n) && n > 0 ? String(lbToKg(n)) : s;
+  };
 
   function submit() {
     setErrors({});
     start(async () => {
       setStage("Enviando check-in…");
-      const res = await submitCheckinAction(v, answers);
+      const { weight_lb, ...rest } = v;
+      const res = await submitCheckinAction({ ...rest, weight_kg: toKg(weight_lb) }, answers);
       if (!res.ok) {
         setStage(null);
         return setErrors({ error: res.error, fields: res.fields });
@@ -116,9 +122,8 @@ export function CheckinForm({
       {(show("weight_kg") || show("waist_cm")) && (
         <div className="grid grid-cols-2 gap-3">
           {show("weight_kg") && (
-            <Field label="Peso (kg)" htmlFor="ck_w" error={errors.fields?.weight_kg}>
-              <Input id="ck_w" inputMode="decimal" value={v.weight_kg} onChange={set("weight_kg")} placeholder="En ayunas" />
-              {lb != null && <span className="tnum text-xs text-faint">≈ {lb} lb</span>}
+            <Field label="Peso (lb)" htmlFor="ck_w" error={errors.fields?.weight_kg ? "Peso: escribí un valor entre 45 y 880 lb" : undefined}>
+              <Input id="ck_w" inputMode="decimal" value={v.weight_lb} onChange={set("weight_lb")} placeholder="En ayunas" />
             </Field>
           )}
           {show("waist_cm") && (

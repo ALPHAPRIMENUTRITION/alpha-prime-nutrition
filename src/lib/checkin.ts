@@ -16,7 +16,7 @@ export type StandardKey =
   | "photos";
 
 export const STANDARD_FIELDS: { key: StandardKey; label: string; hint?: string }[] = [
-  { key: "weight_kg", label: "Peso", hint: "kg, en ayunas" },
+  { key: "weight_kg", label: "Peso", hint: "lb, en ayunas" },
   { key: "waist_cm", label: "Cintura", hint: "cm, a la altura del ombligo" },
   { key: "nutrition_adherence_pct", label: "Adherencia nutricional", hint: "% del plan que cumpliste" },
   { key: "workouts", label: "Entrenamientos completados" },
@@ -93,7 +93,7 @@ const num = (min: number, max: number, label: string, int = false) =>
   );
 
 export const checkinSchema = z.object({
-  weight_kg: num(20, 400, "Peso"),
+  weight_kg: num(20, 400, "Peso (convertido a kg)"),
   waist_cm: num(30, 250, "Cintura"),
   nutrition_adherence_pct: num(0, 100, "Adherencia", true),
   workouts_completed: num(0, 14, "Entrenamientos", true),
@@ -162,4 +162,4 @@ export function normalizeCheckin(r: Record<string, unknown>): CheckinRow {
   };
 }
 
-export const kgToLb = (kg: number) => Math.round(kg * 2.20462 * 10) / 10;
+export { kgToLb } from "@/lib/units";

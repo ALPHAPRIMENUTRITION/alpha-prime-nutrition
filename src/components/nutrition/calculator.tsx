@@ -15,6 +15,7 @@ import {
 import { Button, Field, Input, Select } from "@/components/ui";
 import { KcalRebalancer } from "@/components/nutrition/kcal-rebalancer";
 import { cn } from "@/lib/cn";
+import { kgToLb, lbToKg } from "@/lib/units";
 
 export interface CalcDefaults {
   weightKg: number | null;
@@ -58,7 +59,8 @@ export function NutritionCalculator({
   const [formula, setFormula] = useState<FormulaId>(previous?.formula ?? "mifflin");
   const [v, setV] = useState({
     sex: (prevIn?.sex ?? (defaults.sex === "female" ? "female" : "male")) as Sex,
-    weight: String(defaults.weightKg ?? prevIn?.weightKg ?? ""),
+    // el coach escribe libras; las fórmulas usan kg
+    weight: (() => { const kg = defaults.weightKg ?? prevIn?.weightKg; return kg ? String(kgToLb(kg)) : ""; })(),
     height: String(defaults.heightCm ?? prevIn?.heightCm ?? ""),
     age: String(defaults.age ?? prevIn?.age ?? ""),
     fat: String(defaults.bodyFatPct ?? prevIn?.bodyFatPct ?? ""),
@@ -74,7 +76,7 @@ export function NutritionCalculator({
   const input: CalcInput = {
     formula,
     sex: v.sex,
-    weightKg: n(v.weight),
+    weightKg: lbToKg(n(v.weight)),
     heightCm: n(v.height),
     age: n(v.age),
     bodyFatPct: v.fat.trim() === "" ? null : n(v.fat),
@@ -186,8 +188,9 @@ export function NutritionCalculator({
 
           <fieldset className="grid grid-cols-2 gap-3 sm:grid-cols-5">
             <legend className="eyebrow mb-2">Datos del cliente</legend>
-            <Field label="Peso (kg)" htmlFor="calc_w">
+            <Field label="Peso (lb)" htmlFor="calc_w">
               <Input id="calc_w" type="number" inputMode="decimal" step="0.1" value={v.weight} onChange={set("weight")} />
+              {n(v.weight) > 0 && <span className="tnum text-xs text-faint">= {lbToKg(n(v.weight)).toFixed(1)} kg</span>}
             </Field>
             {meta.needs === "sex" ? (
               <>
@@ -264,7 +267,7 @@ export function NutritionCalculator({
                 <div><dt className="text-xs text-faint">Carbohidratos</dt><dd>{result.carbsG} g</dd></div>
                 <div><dt className="text-xs text-faint">Grasas</dt><dd>{result.fatG} g</dd></div>
                 {result.leanMassKg != null && (
-                  <div className="col-span-3 text-xs text-faint">Masa libre de grasa estimada: {result.leanMassKg} kg</div>
+                  <div className="col-span-3 text-xs text-faint">Masa libre de grasa estimada: {kgToLb(result.leanMassKg)} lb ({result.leanMassKg} kg)</div>
                 )}
               </dl>
             ) : (
@@ -330,7 +333,7 @@ export function describeCalculation(c: CalculationSnapshot | null) {
   const i = c.inputs;
   const parts = [
     c.formula_name,
-    i ? `${i.weightKg} kg${i.heightCm ? ` · ${i.heightCm} cm` : ""}${i.age ? ` · ${i.age} años` : ""}${i.bodyFatPct ? ` · ${i.bodyFatPct}% grasa` : ""}` : null,
+    i ? `${kgToLb(i.weightKg)} lb${i.heightCm ? ` · ${i.heightCm} cm` : ""}${i.age ? ` · ${i.age} años` : ""}${i.bodyFatPct ? ` · ${i.bodyFatPct}% grasa` : ""}` : null,
     i ? `actividad ×${i.activityFactor}` : null,
     c.results ? `TMB ${c.results.bmr} · TDEE ${c.results.tdee}` : null,
     i ? `ajuste ${i.adjustValue > 0 ? "+" : ""}${i.adjustValue}${i.adjustMode === "pct" ? " %" : " kcal"}` : null,

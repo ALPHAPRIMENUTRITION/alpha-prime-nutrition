@@ -2,7 +2,8 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import type { ClientOverviewRow } from "@/lib/types";
 import { MEMBERSHIP_LABEL, MEMBERSHIP_TONE, LOW_ADHERENCE_PCT } from "@/lib/membership";
-import { formatDate, formatKg, formatPct, relativeDays } from "@/lib/format";
+import { formatDate, formatPct, relativeDays } from "@/lib/format";
+import { formatLb } from "@/lib/units";
 import { Avatar, Badge, buttonClass } from "@/components/ui";
 import { cn } from "@/lib/cn";
 
@@ -58,7 +59,7 @@ export function ClientTable({ clients }: { clients: ClientOverviewRow[] }) {
                     </div>
                   </div>
                 </td>
-                <td className="tnum px-2.5 py-3">{formatKg(c.current_weight_kg)}</td>
+                <td className="tnum px-2.5 py-3">{formatLb(c.current_weight_kg)}</td>
                 <td className="tnum px-2.5 py-3">{formatPct(c.current_body_fat_pct)}</td>
                 <td className="px-2.5 py-3">
                   <AdherenceBar value={c.adherence_pct} />
@@ -91,7 +92,7 @@ export function ClientTable({ clients }: { clients: ClientOverviewRow[] }) {
                   <Badge tone={MEMBERSHIP_TONE[c.membership_status]}>{MEMBERSHIP_LABEL[c.membership_status]}</Badge>
                 </div>
                 <p className="tnum mt-0.5 truncate text-xs text-muted">
-                  {formatKg(c.current_weight_kg)} · Adh. {formatPct(c.adherence_pct)} ·{" "}
+                  {formatLb(c.current_weight_kg)} · Adh. {formatPct(c.adherence_pct)} ·{" "}
                   <span className={c.checkin_pending ? "text-warn" : undefined}>Check-in {relativeDays(c.last_checkin_at).toLowerCase()}</span>
                 </p>
               </div>

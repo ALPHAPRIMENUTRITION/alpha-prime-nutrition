@@ -1,3 +1,4 @@
+import { formatLb } from "@/lib/units";
 // Convierte filas de audit_logs en frases legibles:
 // "Carlos Aguilar actualizó Peso de 84 kg a 83 kg"
 
@@ -32,7 +33,7 @@ const FIELD: Record<string, { label: string; unit?: string }> = {
   sex: { label: "Sexo" },
   height_cm: { label: "Altura", unit: "cm" },
   measured_at: { label: "Fecha" },
-  weight_kg: { label: "Peso", unit: "kg" },
+  weight_kg: { label: "Peso" },
   body_fat_pct: { label: "% grasa", unit: "%" },
   neck_cm: { label: "Cuello", unit: "cm" },
   shoulders_cm: { label: "Hombros", unit: "cm" },
@@ -69,6 +70,7 @@ function fmt(field: string, v: unknown) {
   if (v === null || v === undefined || v === "") return "vacío";
   if (field === "user_id") return "vinculada";
   if (field === "payment_amount_cents" && typeof v === "number") return `US$ ${(v / 100).toFixed(2)}`;
+  if (field === "weight_kg" && v !== "") return formatLb(v as number);
   if (typeof v === "boolean") return v ? "sí" : "no";
   if (typeof v === "string" && VALUE_TEXT[v]) return VALUE_TEXT[v];
   const unit = FIELD[field]?.unit;

@@ -32,7 +32,7 @@ export const clientSchema = z
 
 export const newClientSchema = clientSchema.and(
   z.object({
-    weight_kg: optNum(20, 400, "Peso inicial"),
+    weight_kg: optNum(40, 900, "Peso inicial"),
     note: optText(5000),
     create_account: z.preprocess((v) => v === "on" || v === "true", z.boolean()),
   }),
@@ -41,7 +41,7 @@ export const newClientSchema = clientSchema.and(
 export type ClientInput = z.infer<typeof clientSchema>;
 
 export const MEASUREMENT_FIELDS = [
-  { key: "weight_kg", label: "Peso", unit: "kg", min: 20, max: 400 },
+  { key: "weight_kg", label: "Peso", unit: "lb", min: 40, max: 900 },
   { key: "body_fat_pct", label: "% grasa", unit: "%", min: 2, max: 75 },
   { key: "neck_cm", label: "Cuello", unit: "cm", min: 10, max: 100 },
   { key: "shoulders_cm", label: "Hombros", unit: "cm", min: 40, max: 250 },

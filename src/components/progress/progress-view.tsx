@@ -8,6 +8,7 @@ import { Card } from "@/components/ui";
 import { LineChart } from "@/components/charts/line-chart";
 import { ConfirmButton } from "@/components/confirm-button";
 import { deletePhotoAction } from "@/app/coach/clientes/actions";
+import { withWeightInLb } from "@/lib/units";
 
 const POSE: Record<ProgressPhoto["pose"], string> = { front: "Frente", side: "Perfil", back: "Espalda", other: "Otra" };
 
@@ -24,7 +25,7 @@ function Delta({ diff, unit }: { diff: number; unit: string }) {
 
 /** Progreso: antes vs actual, gráficas, otras medidas y fotos. Sirve al coach y al cliente. */
 export function ProgressView({
-  rows,
+  rows: rowsKg,
   photos,
   clientId,
   canManagePhotos = false,
@@ -36,8 +37,9 @@ export function ProgressView({
   canManagePhotos?: boolean;
   uploader?: React.ReactNode;
 }) {
+  const rows = withWeightInLb(rowsKg);
   const main = [
-    { key: "weight_kg" as const, label: "Peso", unit: "kg" },
+    { key: "weight_kg" as const, label: "Peso", unit: "lb" },
     { key: "waist_cm" as const, label: "Cintura", unit: "cm" },
     { key: "body_fat_pct" as const, label: "% grasa", unit: "%" },
   ];

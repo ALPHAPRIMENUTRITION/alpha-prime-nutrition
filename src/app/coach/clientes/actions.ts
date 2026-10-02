@@ -6,6 +6,7 @@ import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAccessLink, type InviteResult } from "@/lib/invite";
 import { serviceFlags } from "@/lib/services";
+import { lbToKg } from "@/lib/units";
 import {
   clientSchema,
   fieldErrors,
@@ -85,7 +86,7 @@ export async function createClientAction(_prev: FormState, fd: FormData): Promis
     height_cm: d.height_cm ?? null,
   });
   if (d.weight_kg) {
-    await supabase.from("measurements").insert({ client_id: clientId, measured_at: d.start_date, weight_kg: d.weight_kg, created_by: coach.id });
+    await supabase.from("measurements").insert({ client_id: clientId, measured_at: d.start_date, weight_kg: lbToKg(d.weight_kg), created_by: coach.id });
   }
   if (d.note) {
     await supabase.from("coach_notes").insert({ client_id: clientId, coach_id: coach.id, body: d.note });
@@ -184,7 +185,10 @@ export async function addMeasurementAction(clientId: string, _prev: FormState, f
   }
 
   const bodyKeys = MEASUREMENT_FIELDS.filter((f) => f.key !== "body_fat_pct").map((f) => f.key);
-  const values = Object.fromEntries(bodyKeys.filter((k) => d[k] !== undefined).map((k) => [k, d[k]]));
+  // El peso llega en libras; se guarda en kg
+  const values = Object.fromEntries(
+    bodyKeys.filter((k) => d[k] !== undefined).map((k) => [k, k === "weight_kg" ? lbToKg(d[k] as number) : d[k]]),
+  );
   const fat = d.body_fat_pct as number | undefined;
 
   if (!Object.keys(values).length && fat === undefined && !Object.keys(extra).length) {

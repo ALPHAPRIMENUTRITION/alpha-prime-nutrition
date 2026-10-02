@@ -101,8 +101,8 @@ export function ClientForm({
           <Input id="height_cm" name="height_cm" type="number" inputMode="decimal" step="0.1" placeholder="175" defaultValue={v.height_cm ?? ""} />
         </Field>
         {mode === "new" && (
-          <Field label="Peso inicial (kg)" htmlFor="weight_kg" error={f.weight_kg}>
-            <Input id="weight_kg" name="weight_kg" type="number" inputMode="decimal" step="0.1" placeholder="80.5" defaultValue={state.values?.weight_kg ?? ""} />
+          <Field label="Peso inicial (lb)" htmlFor="weight_kg" error={f.weight_kg}>
+            <Input id="weight_kg" name="weight_kg" type="number" inputMode="decimal" step="0.1" placeholder="180" defaultValue={state.values?.weight_kg ?? ""} />
           </Field>
         )}
       </fieldset>

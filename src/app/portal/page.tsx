@@ -4,7 +4,8 @@ import { CalendarCheck, Scale, Target } from "lucide-react";
 import { dueDateOfWeek, mondayOf } from "@/lib/checkin";
 import { cn } from "@/lib/cn";
 import { getPortalContext, getPortalHome, nextCheckinDate, programWeek } from "@/lib/data/portal";
-import { diffDaysISO, formatDate, formatKg, todayISO } from "@/lib/format";
+import { diffDaysISO, formatDate, todayISO } from "@/lib/format";
+import { kgToLb } from "@/lib/units";
 import { MEMBERSHIP_LABEL, MEMBERSHIP_TONE } from "@/lib/membership";
 import { Badge, Card, EmptyState } from "@/components/ui";
 import { MembershipLocked } from "@/components/portal/membership-locked";
@@ -40,11 +41,11 @@ export default async function PortalHome() {
 
   // Peso: el registro más reciente entre mediciones y check-ins
   const weights = [
-    ...measurements.map((m) => ({ at: m.measured_at, kg: Number(m.weight_kg) })),
-    ...checkins.filter((c) => c.weight_kg != null).map((c) => ({ at: c.submitted_at.slice(0, 10), kg: Number(c.weight_kg) })),
+    ...measurements.map((m) => ({ at: m.measured_at, lb: kgToLb(Number(m.weight_kg)) })),
+    ...checkins.filter((c) => c.weight_kg != null).map((c) => ({ at: c.submitted_at.slice(0, 10), lb: kgToLb(Number(c.weight_kg)) })),
   ].sort((a, b) => a.at.localeCompare(b.at));
-  const startWeight = weights[0]?.kg ?? null;
-  const currentWeight = weights.at(-1)?.kg ?? null;
+  const startWeight = weights[0]?.lb ?? null;
+  const currentWeight = weights.at(-1)?.lb ?? null;
   const delta = startWeight != null && currentWeight != null ? currentWeight - startWeight : null;
 
   const nextCheckin = nextCheckinDate(ctx.checkinWeekday, last?.submitted_at ?? null);
@@ -83,11 +84,11 @@ export default async function PortalHome() {
           </span>
           <span className="tnum font-display text-4xl font-extrabold leading-none">
             {currentWeight != null ? currentWeight.toFixed(1) : "—"}
-            <span className="ml-1 text-base text-muted">kg</span>
+            <span className="ml-1 text-base text-muted">lb</span>
           </span>
           <span className="tnum text-xs text-muted">
             {delta != null && weights.length > 1
-              ? `${delta > 0 ? "+" : ""}${delta.toFixed(1)} kg desde el inicio (${formatKg(startWeight)})`
+              ? `${delta > 0 ? "+" : ""}${delta.toFixed(1)} lb desde el inicio (${startWeight!.toFixed(1)} lb)`
               : "Sin historial todavía"}
           </span>
         </Card>

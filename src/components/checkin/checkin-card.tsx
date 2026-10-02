@@ -38,7 +38,7 @@ export function CheckinCard({
 }) {
   const adherence = c.coach_adherence_override ?? c.adherence_score;
   const stats: { label: string; value: React.ReactNode; delta?: React.ReactNode }[] = [];
-  if (c.weight_kg != null) stats.push({ label: "Peso", value: <>{n1(c.weight_kg)} kg <span className="text-xs font-normal text-faint">({kgToLb(c.weight_kg)} lb)</span></>, delta: <Delta cur={c.weight_kg} prev={previous?.weight_kg} unit="kg" goodWhenDown /> });
+  if (c.weight_kg != null) stats.push({ label: "Peso", value: `${n1(kgToLb(c.weight_kg))} lb`, delta: <Delta cur={kgToLb(c.weight_kg)} prev={previous?.weight_kg != null ? kgToLb(previous.weight_kg) : null} unit="lb" goodWhenDown /> });
   if (c.waist_cm != null) stats.push({ label: "Cintura", value: `${n1(c.waist_cm)} cm`, delta: <Delta cur={c.waist_cm} prev={previous?.waist_cm} unit="cm" goodWhenDown /> });
   if (c.nutrition_adherence_pct != null) stats.push({ label: "Plan nutricional", value: `${c.nutrition_adherence_pct} %` });
   if (c.workouts_completed != null) stats.push({ label: "Entrenamientos", value: `${c.workouts_completed}${c.workouts_planned ? ` de ${c.workouts_planned}` : ""}` });

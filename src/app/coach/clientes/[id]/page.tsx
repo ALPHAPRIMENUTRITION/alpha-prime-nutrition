@@ -10,6 +10,7 @@ import { programWeek } from "@/lib/data/portal";
 import { ageFrom, bmi, SEX_LABEL } from "@/lib/anthropometry";
 import { describeAudit, type AuditRow } from "@/lib/audit";
 import { formatDate, formatKg, formatMoney, formatPct, relativeDays } from "@/lib/format";
+import { formatLb, kgToLb } from "@/lib/units";
 import { MEMBERSHIP_LABEL, MEMBERSHIP_TONE } from "@/lib/membership";
 import { MEASUREMENT_FIELDS } from "@/lib/validation/client";
 import type { ClientOverviewRow } from "@/lib/types";
@@ -220,7 +221,7 @@ function Summary({
       <Card className="p-5">
         <h2 className="eyebrow mb-3">Seguimiento</h2>
         <dl className="grid gap-2.5 text-sm">
-          <Item k="Peso actual" v={<span className="tnum">{formatKg(o.current_weight_kg)}</span>} />
+          <Item k="Peso actual" v={<span className="tnum">{formatLb(o.current_weight_kg)}</span>} />
           <Item k="% grasa" v={<span className="tnum">{formatPct(o.current_body_fat_pct)}</span>} />
           <Item k="IMC" v={<span className="tnum">{currentBmi ?? "—"}</span>} />
           <Item k="Adherencia (últimos 4)" v={<span className="tnum">{formatPct(o.adherence_pct)}</span>} />
@@ -445,7 +446,9 @@ async function Anthropometry({ id, height }: { id: string; height: number | null
                       {r.notes && <p className="mt-0.5 max-w-[14rem] whitespace-normal text-xs font-normal text-faint">{r.notes}</p>}
                     </td>
                     {used.map((f) => (
-                      <td key={f.key} className="px-3 py-3">{r[f.key] ?? <span className="text-faint">—</span>}</td>
+                      <td key={f.key} className="px-3 py-3">
+                        {f.key === "weight_kg" && r.weight_kg != null ? kgToLb(Number(r.weight_kg)) : (r[f.key] ?? <span className="text-faint">—</span>)}
+                      </td>
                     ))}
                     <td className="px-3 py-3">{bmi(r.weight_kg, height) ?? <span className="text-faint">—</span>}</td>
                     <td className="px-3 py-3 text-xs text-muted">
