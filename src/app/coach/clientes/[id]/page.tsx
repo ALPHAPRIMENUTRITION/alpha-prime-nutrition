@@ -111,15 +111,15 @@ export default async function ClientProfilePage({
       )}
 
       <header className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-center gap-4">
+        <div className="flex items-start gap-4">
           <Avatar name={name} src={o.avatar_url} size={64} />
           <div className="min-w-0 flex-1">
-            <h1 className="font-display text-4xl font-extrabold uppercase leading-none tracking-tight">{name}</h1>
+            <h1 className="break-words font-display text-3xl font-extrabold uppercase leading-none tracking-tight sm:text-4xl">{name}</h1>
             <p className="mt-1 text-muted">{client.goal || "Sin objetivo definido"}</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge tone="neutral">{serviceLabel(client)}</Badge>
-            <Badge tone={MEMBERSHIP_TONE[o.membership_status]}>{MEMBERSHIP_LABEL[o.membership_status]}</Badge>
+            <div className="mt-2.5 flex flex-wrap items-center gap-2">
+              <Badge tone={MEMBERSHIP_TONE[o.membership_status]}>{MEMBERSHIP_LABEL[o.membership_status]}</Badge>
+              <Badge tone="neutral">{serviceLabel(client)}</Badge>
+            </div>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
