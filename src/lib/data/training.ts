@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { toWorkoutTree, type Exercise, type LogRow, type WorkoutMeta, type WorkoutTree } from "@/lib/training/plan";
 
 const TREE_SELECT =
-  "*, workout_days(id, week_number, day_number, name, notes, workout_exercises(id, exercise_id, position, sets, reps, weight_kg, rir, rpe, rest_seconds, tempo, notes))";
+  "*, workout_days(id, week_number, day_number, name, notes, workout_exercises(id, exercise_id, position, sets, reps, weight_kg, rir, rpe, rest_seconds, tempo, notes, duration_min, intensity))";
 const META_COLS = "id, coach_id, client_id, name, start_date, weeks, is_active, periodization, notes, updated_at";
 
 /** Rutina completa. RLS: el coach ve las suyas; el cliente solo su rutina activa. */
@@ -73,7 +73,7 @@ export async function getClientLogs(clientId: string, max = 50_000): Promise<Log
   for (let from = 0; from < max; from += PAGE) {
     const { data: page, error } = await supabase
       .from("workout_logs")
-      .select("id, workout_exercise_id, exercise_id, performed_at, set_number, weight_kg, reps, rir, rpe, comment")
+      .select("id, workout_exercise_id, exercise_id, performed_at, set_number, weight_kg, reps, rir, rpe, comment, duration_min")
       .eq("client_id", clientId)
       .order("performed_at", { ascending: false })
       .order("id")
@@ -88,6 +88,7 @@ export async function getClientLogs(clientId: string, max = 50_000): Promise<Log
     weight_kg: r.weight_kg == null ? null : Number(r.weight_kg),
     rir: r.rir == null ? null : Number(r.rir),
     rpe: r.rpe == null ? null : Number(r.rpe),
+    duration_min: r.duration_min == null ? null : Number(r.duration_min),
   })) as LogRow[];
 }
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ArrowDown, ArrowUp, MoreHorizontal, Repeat, StickyNote, Trash2 } from "lucide-react";
-import type { Exercise, WExercise } from "@/lib/training/plan";
+import { isCardio, type Exercise, type WExercise } from "@/lib/training/plan";
 import { cn } from "@/lib/cn";
 
 export interface RowHandlers {
@@ -25,7 +25,7 @@ export const restText = (sec: number | null) => (sec == null ? "" : sec >= 60 &&
 
 const str = (v: number | string | null) => (v == null ? "" : String(v));
 
-type FieldKey = "sets" | "reps" | "weight_kg" | "rir" | "rpe" | "rest_seconds" | "tempo";
+type FieldKey = "sets" | "reps" | "weight_kg" | "rir" | "rpe" | "rest_seconds" | "tempo" | "duration_min" | "intensity";
 const FIELDS: { k: FieldKey; label: string; hint: string; mode: "numeric" | "decimal" | "text"; w: string }[] = [
   { k: "sets", label: "Series", hint: "—", mode: "numeric", w: "w-14" },
   { k: "reps", label: "Reps", hint: "—", mode: "text", w: "w-16" },
@@ -34,6 +34,12 @@ const FIELDS: { k: FieldKey; label: string; hint: string; mode: "numeric" | "dec
   { k: "rpe", label: "RPE", hint: "—", mode: "decimal", w: "w-12" },
   { k: "rest_seconds", label: "Descanso", hint: "seg", mode: "text", w: "w-16" },
   { k: "tempo", label: "Tempo", hint: "—", mode: "text", w: "w-16" },
+];
+// Cardio: se pauta por tiempo
+const CARDIO_FIELDS: typeof FIELDS = [
+  { k: "duration_min", label: "Minutos", hint: "30", mode: "decimal", w: "w-20" },
+  { k: "intensity", label: "Intensidad", hint: "Ej. zona 2 · 5.5 km/h · 10 %", mode: "text", w: "w-64 max-w-full" },
+  { k: "rpe", label: "RPE", hint: "—", mode: "decimal", w: "w-12" },
 ];
 
 export function ExerciseRow({ row, exercise, index, total, h, busy }: { row: WExercise; exercise: Exercise | undefined; index: number; total: number; h: RowHandlers; busy: boolean }) {
@@ -46,13 +52,16 @@ export function ExerciseRow({ row, exercise, index, total, h, busy }: { row: WEx
     rest_seconds: restText(row.rest_seconds),
     tempo: str(row.tempo),
     notes: str(row.notes),
+    duration_min: str(row.duration_min),
+    intensity: str(row.intensity),
   });
   const [v, setV] = useState(init);
   const [err, setErr] = useState<string | null>(null);
   const [menu, setMenu] = useState(false);
   const [showNotes, setShowNotes] = useState(Boolean(row.notes));
   // Si llegan datos nuevos del servidor (copiar semana, etc.), actualizar.
-  const sig = JSON.stringify([row.sets, row.reps, row.weight_kg, row.rir, row.rpe, row.rest_seconds, row.tempo, row.notes]);
+  const sig = JSON.stringify([row.sets, row.reps, row.weight_kg, row.rir, row.rpe, row.rest_seconds, row.tempo, row.notes, row.duration_min, row.intensity]);
+  const fields = isCardio(exercise) ? CARDIO_FIELDS : FIELDS;
   useEffect(() => setV(init()), [sig]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function commit(k: FieldKey | "notes") {
@@ -105,7 +114,7 @@ export function ExerciseRow({ row, exercise, index, total, h, busy }: { row: WEx
       </div>
 
       <div className="mt-2.5 flex flex-wrap gap-x-2 gap-y-2 pl-9">
-        {FIELDS.map((f) => (
+        {fields.map((f) => (
           <label key={f.k} className="flex flex-col gap-0.5">
             <span className="text-[10px] font-semibold uppercase tracking-wider text-faint">{f.label}</span>
             <input
@@ -113,11 +122,11 @@ export function ExerciseRow({ row, exercise, index, total, h, busy }: { row: WEx
               inputMode={f.mode === "text" ? undefined : f.mode}
               value={v[f.k]}
               placeholder={f.hint}
-              maxLength={f.k === "reps" ? 20 : f.k === "tempo" ? 12 : 8}
+              maxLength={f.k === "reps" ? 20 : f.k === "tempo" ? 12 : f.k === "intensity" ? 60 : 8}
               onChange={(e) => setV((x) => ({ ...x, [f.k]: e.target.value }))}
               onBlur={() => commit(f.k)}
               onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
-              className={cn("tnum h-9 rounded-lg border border-line bg-ink px-2 text-center text-sm text-fg placeholder:text-faint focus:border-faint focus:outline-none", f.w)}
+              className={cn("tnum h-9 rounded-lg border border-line bg-ink px-2 text-center text-sm text-fg placeholder:text-faint focus:border-faint focus:outline-none", f.w, f.k === "intensity" && "px-3 text-left")}
             />
           </label>
         ))}

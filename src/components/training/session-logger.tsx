@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { Check, History, Lightbulb, MessageSquare, Plus, Trash2 } from "lucide-react";
 import { deleteSetAction, saveSetAction } from "@/app/portal/entrenamiento/actions";
-import { LOAD_UNIT, prescriptionLine, suggestNext, type Exercise, type LogRow, type Suggestion, type WExercise } from "@/lib/training/plan";
+import { cardioLine, isCardio, LOAD_UNIT, prescriptionLine, suggestNext, type Exercise, type LogRow, type Suggestion, type WExercise } from "@/lib/training/plan";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
@@ -46,7 +46,81 @@ export function SessionLogger({
   );
 }
 
-function ExerciseLog({ index, row, exercise, logs, prev, date, canLog }: { index: number; row: WExercise; exercise: Exercise | undefined; logs: LogRow[]; prev?: { date: string; sets: LogRow[] }; date: string; canLog: boolean }) {
+function ExerciseLog(props: { index: number; row: WExercise; exercise: Exercise | undefined; logs: LogRow[]; prev?: { date: string; sets: LogRow[] }; date: string; canLog: boolean }) {
+  return isCardio(props.exercise) ? <CardioLog {...props} /> : <StrengthLog {...props} />;
+}
+
+/** Cardio: un solo registro con los minutos que hizo (y comentario opcional). */
+function CardioLog({ index, row, exercise, logs, prev, date, canLog }: { index: number; row: WExercise; exercise: Exercise | undefined; logs: LogRow[]; prev?: { date: string; sets: LogRow[] }; date: string; canLog: boolean }) {
+  const log = logs[0];
+  const [min, setMin] = useState(fmt(log?.duration_min ?? null));
+  const [comment, setComment] = useState(log?.comment ?? "");
+  const [saved, setSaved] = useState<string | null>(log?.id ?? null);
+  const [dirty, setDirty] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [pending, start] = useTransition();
+  const ph = fmt(row.duration_min);
+  const prevMin = prev?.sets.reduce((s, x) => s + (x.duration_min ?? 0), 0) ?? 0;
+  const isDone = Boolean(saved) && !dirty;
+  const name = exercise?.name ?? "cardio";
+
+  function save() {
+    setErr(null);
+    const value = min || ph;
+    start(async () => {
+      const res = await saveSetAction(row.id, date, 1, { duration_min: value, comment, weight_kg: "", reps: "", rir: "", rpe: "" });
+      if (!res.ok) return setErr(res.error);
+      setMin(value);
+      setSaved(res.id);
+      setDirty(false);
+    });
+  }
+
+  const input = "tnum h-10 w-full min-w-0 rounded-lg border border-line bg-ink px-2 text-center text-base text-fg placeholder:text-faint focus:border-faint focus:outline-none disabled:opacity-60";
+  return (
+    <article className="overflow-hidden rounded-card border border-line bg-panel">
+      <header className="flex items-start gap-3 border-b border-line px-4 py-3">
+        <span className="tnum mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-panel-2 text-xs font-bold text-muted">{index + 1}</span>
+        <div className="min-w-0 flex-1">
+          <h3 className="font-semibold leading-tight">{name}</h3>
+          <p className="tnum mt-0.5 text-sm text-muted">{cardioLine(row) || "Sin prescripción"}</p>
+          {row.notes && <p className="mt-1 text-xs text-faint">{row.notes}</p>}
+        </div>
+        <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold", isDone ? "bg-ok/15 text-ok" : "bg-panel-2 text-muted")}>{isDone ? "Hecho" : "Pendiente"}</span>
+      </header>
+      {prev && prevMin > 0 && (
+        <p className="flex items-start gap-1.5 border-b border-line bg-graphite px-4 py-2 text-xs text-muted">
+          <History size={13} className="mt-0.5 shrink-0" aria-hidden="true" />
+          <span>La vez pasada ({formatDate(prev.date)}): <span className="tnum text-fg">{fmt(prevMin)} min</span></span>
+        </p>
+      )}
+      <div className={cn("flex flex-col gap-2 px-4 py-3", isDone && "bg-ok/5")}>
+        <div className="grid grid-cols-[6rem_1fr_2.5rem] items-end gap-2">
+          <label className="flex flex-col gap-1">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-faint">Minutos</span>
+            <input aria-label={`Minutos de ${name}`} inputMode="decimal" value={min} onChange={(e) => { setMin(e.target.value); setDirty(true); }} placeholder={ph || "min"} disabled={!canLog} className={input} />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-faint">Comentario</span>
+            <input aria-label={`Comentario de ${name}`} value={comment} onChange={(e) => { setComment(e.target.value); setDirty(true); }} maxLength={500} placeholder="Ej. velocidad, inclinación, cómo te sentiste" disabled={!canLog} className={cn(input, "px-3 text-left text-sm")} />
+          </label>
+          <button
+            type="button"
+            onClick={save}
+            disabled={!canLog || pending || isDone}
+            aria-label={`Guardar ${name}`}
+            className={cn("grid h-10 w-10 place-items-center rounded-lg border", isDone ? "border-ok/40 bg-ok/15 text-ok" : "border-red bg-red text-white hover:bg-red-hover", "disabled:cursor-default")}
+          >
+            <Check size={18} strokeWidth={2.5} />
+          </button>
+        </div>
+        {err && <p role="alert" className="text-xs text-bad">{err}</p>}
+      </div>
+    </article>
+  );
+}
+
+function StrengthLog({ index, row, exercise, logs, prev, date, canLog }: { index: number; row: WExercise; exercise: Exercise | undefined; logs: LogRow[]; prev?: { date: string; sets: LogRow[] }; date: string; canLog: boolean }) {
   const planned = Math.max(row.sets ?? 3, logs.reduce((m, l) => Math.max(m, l.set_number), 0));
   const [count, setCount] = useState(planned);
   const useRpe = row.rpe != null && row.rir == null;

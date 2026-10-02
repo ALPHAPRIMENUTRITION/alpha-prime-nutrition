@@ -27,7 +27,9 @@ export async function saveSetAction(
   if (date > today || date < addDaysISO(today, -14)) return { ok: false, error: "Solo podés registrar entrenamientos de las últimas 2 semanas." };
   const parsed = logSetSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]!.message };
-  if (parsed.data.weight_kg == null && parsed.data.reps == null) return { ok: false, error: "Escribí al menos el peso o las repeticiones." };
+  if (parsed.data.weight_kg == null && parsed.data.reps == null && parsed.data.duration_min == null) {
+    return { ok: false, error: "Escribí al menos el peso, las repeticiones o los minutos." };
+  }
 
   const supabase = await createClient();
   const [{ data: me }, { data: we }] = await Promise.all([
@@ -50,6 +52,7 @@ export async function saveSetAction(
         rir: parsed.data.rir ?? null,
         rpe: parsed.data.rpe ?? null,
         comment: parsed.data.comment ?? null,
+        duration_min: parsed.data.duration_min ?? null,
       },
       { onConflict: "client_id,workout_exercise_id,performed_at,set_number" },
     )

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { ArrowDown, ArrowRight, ArrowUp } from "lucide-react";
-import { e1rm, LOAD_UNIT, weekStart, type Exercise, type LogRow } from "@/lib/training/plan";
+import { e1rm, isCardio, LOAD_UNIT, weekStart, type Exercise, type LogRow } from "@/lib/training/plan";
 import { formatDate } from "@/lib/format";
 import { LineChart } from "@/components/charts/line-chart";
 import { Card } from "@/components/ui";
@@ -67,6 +67,7 @@ export function ProgressionView({ logs, exercises, empty }: { logs: LogRow[]; ex
 
   if (!byExercise.length) return <Card className="px-6 py-8 text-center text-sm text-muted">{empty}</Card>;
 
+  const cardio = isCardio(exMap.get(sel ?? ""));
   const m = METRICS.find((x) => x.id === metric)!;
   const series = sessions.map((s) => ({ date: s.date, value: r1(metric === "top" ? s.top : metric === "e1rm" ? s.best : s.volume) })).filter((p) => p.value > 0);
   const first = series[0]?.value;
@@ -91,6 +92,17 @@ export function ProgressionView({ logs, exercises, empty }: { logs: LogRow[]; ex
         </select>
       </div>
 
+      {cardio ? (
+        <Card className="flex flex-col gap-4 p-5">
+          <p className="text-sm font-semibold">Minutos por sesión</p>
+          <LineChart
+            data={sessions.map((s) => ({ date: s.date, value: r1(s.sets.reduce((acc, x) => acc + (x.duration_min ?? 0), 0)) })).filter((p) => p.value > 0)}
+            unit="min"
+            label={`Minutos de ${exMap.get(sel ?? "")?.name ?? "cardio"}`}
+          />
+        </Card>
+      ) : (
+      <>
       <Card className="flex flex-col gap-4 p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="inline-flex rounded-full border border-line p-1" role="group" aria-label="Métrica">
@@ -156,16 +168,21 @@ export function ProgressionView({ logs, exercises, empty }: { logs: LogRow[]; ex
         </Card>
       )}
 
+      </>
+      )}
+
       <Card className="p-0">
         <ul>
           {[...sessions].reverse().map((s) => (
             <li key={s.date} className="border-b border-line px-4 py-3 last:border-0">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <p className="text-sm font-semibold">{formatDate(s.date)}</p>
-                <p className="tnum text-xs text-muted">Máx {fmtN(s.top)} {LOAD_UNIT} · 1RM est. {fmtN(r1(s.best))} {LOAD_UNIT} · Vol {Math.round(s.volume).toLocaleString("es-SV")} {LOAD_UNIT}</p>
+                {!cardio && <p className="tnum text-xs text-muted">Máx {fmtN(s.top)} {LOAD_UNIT} · 1RM est. {fmtN(r1(s.best))} {LOAD_UNIT} · Vol {Math.round(s.volume).toLocaleString("es-SV")} {LOAD_UNIT}</p>}
               </div>
               <p className="tnum mt-1 text-sm">
-                {s.sets.map((x) => `${fmtN(x.weight_kg)}×${x.reps ?? "–"}${x.rir != null ? ` (RIR ${fmtN(x.rir)})` : x.rpe != null ? ` (RPE ${fmtN(x.rpe)})` : ""}`).join(" · ")}
+                {cardio
+                  ? `${fmtN(r1(s.sets.reduce((acc, x) => acc + (x.duration_min ?? 0), 0)))} min`
+                  : s.sets.map((x) => `${fmtN(x.weight_kg)}×${x.reps ?? "–"}${x.rir != null ? ` (RIR ${fmtN(x.rir)})` : x.rpe != null ? ` (RPE ${fmtN(x.rpe)})` : ""}`).join(" · ")}
               </p>
               {s.sets.some((x) => x.comment) && (
                 <p className="mt-1 text-xs text-muted">{s.sets.filter((x) => x.comment).map((x) => `S${x.set_number}: ${x.comment}`).join(" · ")}</p>

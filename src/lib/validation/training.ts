@@ -31,6 +31,8 @@ export const prescriptionSchema = z
     rest_seconds: optNum(0, 1800, "Descanso", true),
     tempo: optText(12),
     notes: optText(500),
+    duration_min: optNum(0.5, 600, "Minutos"),
+    intensity: optText(60),
   })
   .partial();
 
@@ -52,4 +54,5 @@ export const logSetSchema = z.object({
   rir: optNum(0, 10, "RIR"),
   rpe: optNum(1, 10, "RPE"),
   comment: optText(500),
+  duration_min: optNum(0.5, 600, "Minutos"),
 });

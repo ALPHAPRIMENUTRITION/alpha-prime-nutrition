@@ -13,6 +13,7 @@ Plataforma de coaching nutricional y entrenamiento con dos roles: **COACH** y **
 - Servicio por cliente: nutrición y entrenamiento, solo nutrición o solo entrenamiento (`clients.has_nutrition/has_training`). Lo no contratado se oculta en el portal y la base lo bloquea (RLS); el check-in no pregunta por ello y no se envían avisos de esos planes. El coach siempre puede preparar ambos. Migración: `20261001001100_client_services.sql`.
 - Peso corporal en libras en toda la interfaz (cliente nuevo, mediciones, check-in, progreso, calculadora). La base sigue guardando kg con 2 decimales (`src/lib/units.ts` convierte), así las fórmulas no cambian.
 - Pliegues cutáneos (bicipital, tricipital, subescapular, suprailíaco) en cada medición y **Comparativa** entre dos fechas (coach y cliente): peso, % grasa, lb de grasa, lb de MCM, IMC, pliegues y su suma, circunferencias; diferencia en verde/rojo (`src/lib/comparison.ts`). Migración: `20261001001300_skinfolds.sql`.
+- Cardio por tiempo: los ejercicios del grupo "Cardio" se pautan con minutos, intensidad y RPE (`workout_exercises.duration_min/intensity`) y el cliente registra minutos (`workout_logs.duration_min`); el historial muestra minutos por sesión. Copiar día/semana/rutina incluye esos campos. Migración: `20261001001400_cardio.sql`.
 
 ### Acceso de clientes (Fase 2)
 Al crear un cliente se genera un **link de acceso** para compartir por WhatsApp; con él crea su contraseña en `/auth/aceptar`.

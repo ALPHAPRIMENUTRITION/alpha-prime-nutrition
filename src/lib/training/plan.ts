@@ -21,7 +21,13 @@ export interface WExercise {
   rest_seconds: number | null;
   tempo: string | null;
   notes: string | null;
+  /** Cardio: minutos e intensidad (en vez de series/reps/peso) */
+  duration_min: number | null;
+  intensity: string | null;
 }
+
+/** Los ejercicios del grupo "Cardio" se pautan y registran por tiempo. */
+export const isCardio = (e: { muscle_group?: string | null } | undefined | null) => e?.muscle_group === "Cardio";
 
 export interface WDay {
   id: string;
@@ -87,6 +93,8 @@ export function toWorkoutTree(raw: any): WorkoutTree {
         rest_seconds: e.rest_seconds,
         tempo: e.tempo,
         notes: e.notes,
+        duration_min: num(e.duration_min),
+        intensity: e.intensity ?? null,
       }))
       .sort((a: WExercise, b: WExercise) => a.position - b.position),
   }));
@@ -105,14 +113,27 @@ export function formatRest(sec: number | null) {
 const n1 = (v: number) => (Number.isInteger(v) ? String(v) : v.toFixed(1));
 
 /** "4 × 6-8 · 135 lb · RIR 2 · descanso 2:30 min · tempo 3-1-1" */
-export function prescriptionLine(e: Pick<WExercise, "sets" | "reps" | "weight_kg" | "rir" | "rpe" | "rest_seconds" | "tempo">) {
+export function prescriptionLine(e: Pick<WExercise, "sets" | "reps" | "weight_kg" | "rir" | "rpe" | "rest_seconds" | "tempo"> & Partial<Pick<WExercise, "duration_min" | "intensity">>) {
   return [
+    e.duration_min != null ? `${n1(e.duration_min)} min` : null,
+    e.intensity ? e.intensity : null,
     e.sets || e.reps ? `${e.sets ?? "?"} × ${e.reps ?? "?"}` : null,
     e.weight_kg != null ? `${n1(e.weight_kg)} ${LOAD_UNIT}` : null,
     e.rir != null ? `RIR ${n1(e.rir)}` : null,
     e.rpe != null ? `RPE ${n1(e.rpe)}` : null,
     e.rest_seconds != null ? `descanso ${formatRest(e.rest_seconds)}` : null,
     e.tempo ? `tempo ${e.tempo}` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
+
+/** Cardio: solo tiempo, intensidad y RPE (ignora series/reps/peso que hubieran quedado cargados). */
+export function cardioLine(e: Pick<WExercise, "duration_min" | "intensity" | "rpe">) {
+  return [
+    e.duration_min != null ? `${n1(e.duration_min)} min` : null,
+    e.intensity || null,
+    e.rpe != null ? `RPE ${n1(e.rpe)}` : null,
   ]
     .filter(Boolean)
     .join(" · ");
@@ -149,6 +170,7 @@ export interface LogRow {
   rir: number | null;
   rpe: number | null;
   comment: string | null;
+  duration_min: number | null;
 }
 
 /** "6-8" → {min 6, max 8} · "10" → {10, 10} · "AMRAP" → null */
