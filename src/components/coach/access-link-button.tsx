@@ -11,7 +11,9 @@ export function AccessLinkButton({
   label,
   firstName,
   phone,
+  primary = false,
 }: {
+  primary?: boolean;
   action: () => Promise<InviteResult>;
   label: string;
   firstName: string;
@@ -23,7 +25,7 @@ export function AccessLinkButton({
   return (
     <div className="flex flex-col gap-3">
       <div>
-        <Button type="button" variant="secondary" size="sm" disabled={pending} onClick={() => start(async () => setResult(await action()))}>
+        <Button type="button" variant={primary ? "primary" : "secondary"} size="sm" disabled={pending} onClick={() => start(async () => setResult(await action()))}>
           <KeyRound size={16} /> {pending ? "Generando…" : label}
         </Button>
       </div>

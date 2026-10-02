@@ -49,12 +49,16 @@ export function ClientForm({
         <div className="rounded-card border border-line bg-panel p-6">
           <p className="eyebrow">Cliente creado</p>
           <p className="mt-1 font-display text-3xl font-extrabold uppercase">Listo</p>
-          <p className="mt-2 text-sm text-muted">El expediente ya está en tu panel.</p>
+          <p className="mt-2 text-sm text-muted">
+            {state.invite
+              ? "El expediente ya está en tu panel."
+              : "Todavía no le llegó nada al cliente. Armale su plan y su rutina, y cuando esté todo listo invitalo desde su perfil con «Invitar por WhatsApp»."}
+          </p>
         </div>
         {state.invite && <InviteLinkCard invite={state.invite} firstName={state.firstName || "tu cliente"} phone={state.phone} />}
         <div className="flex flex-wrap gap-2">
-          <Link href={`/coach/clientes/${state.clientId}`} className={buttonClass("primary")}>
-            Ver perfil
+          <Link href={`/coach/clientes/${state.clientId}${state.invite ? "" : "?tab=nutricion"}`} className={buttonClass("primary")}>
+            {state.invite ? "Ver perfil" : "Armar su plan"}
           </Link>
           <a href="/coach/clientes/nuevo" className={buttonClass("secondary")}>
             Agregar otro
@@ -137,12 +141,12 @@ export function ClientForm({
             <Textarea id="note" name="note" placeholder="Lesiones, preferencias, horarios…" defaultValue={state.values?.note ?? ""} />
           </Field>
           <label className="flex items-start gap-3 text-sm">
-            <input type="checkbox" name="create_account" defaultChecked={invitesEnabled} disabled={!invitesEnabled} className="mt-0.5 h-5 w-5 accent-[#e3242f]" />
+            <input type="checkbox" name="create_account" defaultChecked={false} disabled={!invitesEnabled} className="mt-0.5 h-5 w-5 accent-[#e3242f]" />
             <span>
-              <span className="font-semibold">Crear su acceso a la app</span>
+              <span className="font-semibold">Invitarlo a la app ahora</span>
               <span className="block text-muted">
                 {invitesEnabled
-                  ? "Vas a recibir un link para enviarle por WhatsApp y que cree su contraseña."
+                  ? "Dejalo sin marcar si primero querés armarle el plan y la rutina. Lo invitás después desde su perfil con «Invitar por WhatsApp»."
                   : "Disponible cuando se configure la clave SUPABASE_SERVICE_ROLE_KEY en Netlify."}
               </span>
             </span>

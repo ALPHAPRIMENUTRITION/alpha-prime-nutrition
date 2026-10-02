@@ -126,6 +126,15 @@ export default async function ClientProfilePage({
           <Link href={`/coach/clientes/${id}/editar`} className={buttonClass("secondary", "sm")}>
             <Pencil size={15} /> Editar
           </Link>
+          {invitesEnabled() && account !== "active" && (
+            <AccessLinkButton
+              action={accessLinkAction.bind(null, id)}
+              label={account === "none" ? "Invitar por WhatsApp" : "Reenviar invitación"}
+              firstName={client.first_name}
+              phone={client.phone}
+              primary
+            />
+          )}
           {suspended ? (
             <ConfirmButton
               action={setClientStatusAction.bind(null, id, "active")}
@@ -241,12 +250,9 @@ function Summary({
         <div className="mt-4">
           {invites ? (
             account !== "active" ? (
-              <AccessLinkButton
-                action={accessLinkAction.bind(null, id)}
-                label={account === "none" ? "Crear acceso a la app" : "Generar nuevo link de acceso"}
-                firstName={client.first_name}
-                phone={client.phone}
-              />
+              <p className="text-xs text-faint">
+                {account === "none" ? "Todavía no lo invitaste. Cuando su plan esté listo, usá «Invitar por WhatsApp» arriba." : "Invitación enviada, todavía no creó su contraseña."}
+              </p>
             ) : (
               <AccessLinkButton action={accessLinkAction.bind(null, id)} label="Link para cambiar contraseña" firstName={client.first_name} phone={client.phone} />
             )
