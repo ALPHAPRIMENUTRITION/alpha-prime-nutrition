@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus, Search } from "lucide-react";
+import { Pencil, Plus, Search } from "lucide-react";
 import { itemMacros, normalize, unitLabel, type Food } from "@/lib/nutrition/plan";
 import { Button, Input } from "@/components/ui";
 import { FoodForm } from "@/components/nutrition/food-form";
@@ -28,6 +28,7 @@ export function FoodPicker({
   const [qty, setQty] = useState("");
   const [notes, setNotes] = useState("");
   const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState<Food | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -57,6 +58,24 @@ export function FoodPicker({
       setQty("");
       setNotes("");
     }
+  }
+
+  if (editing) {
+    return (
+      <div className="rounded-xl border border-line bg-panel p-4">
+        <p className="mb-3 text-sm font-semibold">Editar alimento</p>
+        <FoodForm
+          key={editing.id}
+          food={editing}
+          onSaved={(f) => {
+            onFoodCreated(f); // actualiza la lista (reemplaza por id)
+            setEditing(null);
+          }}
+          onCancel={() => setEditing(null)}
+        />
+        <p className="mt-2 text-xs text-faint">El cambio se aplica en todos los planes que usan este alimento.</p>
+      </div>
+    );
   }
 
   if (creating) {
@@ -95,11 +114,11 @@ export function FoodPicker({
           </div>
           <ul className="max-h-72 overflow-y-auto rounded-xl border border-line" role="listbox" aria-label="Resultados">
             {results.map((f) => (
-              <li key={f.id}>
+              <li key={f.id} className="flex items-stretch border-b border-line last:border-0">
                 <button
                   type="button"
                   onClick={() => choose(f)}
-                  className="flex w-full items-center justify-between gap-3 border-b border-line px-3.5 py-2.5 text-left text-sm last:border-0 hover:bg-panel-2"
+                  className="flex min-w-0 flex-1 items-center justify-between gap-3 px-3.5 py-2.5 text-left text-sm hover:bg-panel-2"
                 >
                   <span className="min-w-0">
                     <span className="block truncate font-medium">{f.name}</span>
@@ -113,6 +132,11 @@ export function FoodPicker({
                     <span className="block text-faint">por {f.reference_amount} {unitLabel(f.unit, f.reference_amount)}</span>
                   </span>
                 </button>
+                {f.coach_id && (
+                  <button type="button" onClick={() => setEditing(f)} aria-label={`Editar ${f.name}`} title="Editar" className="grid w-10 shrink-0 place-items-center text-muted hover:bg-panel-2 hover:text-fg">
+                    <Pencil size={14} />
+                  </button>
+                )}
               </li>
             ))}
             {results.length === 0 && <li className="px-3.5 py-4 text-sm text-muted">No hay coincidencias.</li>}

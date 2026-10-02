@@ -243,7 +243,7 @@ export function WorkoutEditor({
             <ExercisePicker
               idPrefix={`add_${week}_${day}`}
               exercises={exercises}
-              onCreated={(ex) => setExercises((l) => [...l, ex])}
+              onCreated={(ex) => setExercises((l) => (l.some((x) => x.id === ex.id) ? l.map((x) => (x.id === ex.id ? ex : x)) : [...l, ex]))}
               onPick={(ex) => run(() => A.addWorkoutExerciseAction(plan.id, week, day, ex.id), `${ex.name} agregado`)}
             />
           </Card>
@@ -328,7 +328,7 @@ export function WorkoutEditor({
               idPrefix="swap"
               exercises={exercises}
               pickLabel="Elegir"
-              onCreated={(ex) => setExercises((l) => [...l, ex])}
+              onCreated={(ex) => setExercises((l) => (l.some((x) => x.id === ex.id) ? l.map((x) => (x.id === ex.id ? ex : x)) : [...l, ex]))}
               onPick={async (ex) => {
                 const ok = await run(() => A.swapWorkoutExerciseAction(plan.id, dialog.swap, ex.id), "Ejercicio cambiado");
                 if (ok) setDialog(null);

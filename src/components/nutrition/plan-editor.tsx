@@ -154,7 +154,10 @@ export function PlanEditor({
     removeItem: async (id) => void (await run(() => A.deleteItemAction(plan.id, id))),
     addSub: (itemId, food, qty, notes) => run(() => A.addSubstitutionAction(plan.id, itemId, food.id, qty, notes), "Sustitución agregada"),
     removeSub: async (id) => void (await run(() => A.deleteSubstitutionAction(plan.id, id))),
-    foodCreated: (f) => setFoods((list) => [...list, f]),
+    foodCreated: (f) => {
+      setFoods((list) => (list.some((x) => x.id === f.id) ? list.map((x) => (x.id === f.id ? f : x)) : [...list, f]));
+      router.refresh(); // si cambió un alimento existente, recalcula los totales del plan
+    },
   };
 
   const sh: SupplementHandlers = {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus, Search } from "lucide-react";
+import { Pencil, Plus, Search } from "lucide-react";
 import { normalize } from "@/lib/nutrition/plan";
 import { MUSCLE_GROUPS, type Exercise } from "@/lib/training/plan";
 import { Button, Input } from "@/components/ui";
@@ -25,6 +25,7 @@ export function ExercisePicker({
   const [q, setQ] = useState("");
   const [group, setGroup] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState<Exercise | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
 
   const groups = useMemo(() => MUSCLE_GROUPS.filter((g) => exercises.some((e) => e.muscle_group === g)), [exercises]);
@@ -35,6 +36,25 @@ export function ExercisePicker({
       .sort((a, b) => Number(Boolean(b.coach_id)) - Number(Boolean(a.coach_id)) || a.name.localeCompare(b.name))
       .slice(0, 40);
   }, [q, group, exercises]);
+
+  if (editing) {
+    return (
+      <div className="flex flex-col gap-3">
+        <p className="text-sm font-semibold">Editar ejercicio</p>
+        <ExerciseForm
+          idPrefix={`${idPrefix}_ed`}
+          exerciseId={editing.id}
+          initial={editing}
+          onSaved={(ex) => {
+            onCreated(ex); // actualiza la lista (reemplaza por id)
+            setEditing(null);
+          }}
+          onCancel={() => setEditing(null)}
+        />
+        <p className="text-xs text-faint">El cambio se aplica en todas las rutinas que usan este ejercicio.</p>
+      </div>
+    );
+  }
 
   if (creating) {
     return (
@@ -79,6 +99,11 @@ export function ExercisePicker({
                 {e.coach_id ? " · propio" : ""}
               </span>
             </span>
+            {e.coach_id && (
+              <button type="button" onClick={() => setEditing(e)} aria-label={`Editar ${e.name}`} title="Editar" className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-muted hover:bg-panel-2 hover:text-fg">
+                <Pencil size={14} />
+              </button>
+            )}
             <button
               type="button"
               disabled={busy !== null}
