@@ -4,9 +4,9 @@ import { Bell } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { Logo, LogoHorizontal } from "@/components/brand/logo";
-import { Avatar } from "@/components/ui";
 import { CoachNav } from "@/components/coach/coach-nav";
 import { SignOutButton } from "@/components/sign-out-button";
+import { AvatarUpload } from "@/components/profile/avatar-upload";
 
 export default async function CoachLayout({ children }: { children: React.ReactNode }) {
   const profile = await requireRole("coach");
@@ -31,7 +31,7 @@ export default async function CoachLayout({ children }: { children: React.ReactN
         </div>
         <div className="flex flex-col gap-3 border-t border-line pt-4">
           <div className="flex items-center gap-3 px-1">
-            <Avatar name={profile.full_name || "Coach"} src={profile.avatar_url} />
+            <AvatarUpload userId={profile.id} name={profile.full_name || "Coach"} src={profile.avatar_url} size={40} />
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold">{profile.full_name}</p>
               <p className="text-xs text-faint">Coach</p>

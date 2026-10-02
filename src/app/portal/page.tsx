@@ -11,6 +11,8 @@ import { Badge, Card, EmptyState } from "@/components/ui";
 import { MembershipLocked } from "@/components/portal/membership-locked";
 import { MembershipWarning } from "@/components/portal/membership-warning";
 import { InstallPrompt } from "@/components/pwa/install-prompt";
+import { AvatarUpload } from "@/components/profile/avatar-upload";
+import { getSessionProfile } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Inicio" };
 
@@ -23,6 +25,7 @@ function weeklyMessage(adherence: number | null | undefined) {
 }
 
 export default async function PortalHome() {
+  const me = await getSessionProfile();
   const ctx = await getPortalContext();
   if (!ctx) {
     return (
@@ -60,10 +63,15 @@ export default async function PortalHome() {
       <InstallPrompt />
 
       <section>
-        <p className="eyebrow">Semana {programWeek(client.start_date)} del programa</p>
-        <h1 className="mt-1 font-display text-5xl font-extrabold uppercase leading-[0.9] tracking-tight">
-          Hola, <span className="text-red">{client.first_name}</span>
-        </h1>
+        <div className="flex items-center gap-4">
+          {me && <AvatarUpload userId={me.id} name={`${client.first_name} ${client.last_name}`} src={me.avatar_url} size={64} />}
+          <div className="min-w-0">
+            <p className="eyebrow">Semana {programWeek(client.start_date)} del programa</p>
+            <h1 className="mt-1 font-display text-5xl font-extrabold uppercase leading-[0.9] tracking-tight">
+              Hola, <span className="text-red">{client.first_name}</span>
+            </h1>
+          </div>
+        </div>
         <p className="mt-3 text-[15px] text-muted">{weeklyMessage(lastAdherence)}</p>
       </section>
 
