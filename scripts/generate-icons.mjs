@@ -3,8 +3,8 @@
 import sharp from "sharp";
 import { mkdirSync } from "node:fs";
 
-const SQUARE = "brand-src/svg/icono-app-cuadrado.svg"; // fondo rojo a sangre (Android/iOS recortan)
-const ROUNDED = "brand-src/svg/icono-app.svg"; // esquinas redondeadas (favicon)
+const SQUARE = "brand-src/svg/icono-negro-cuadrado.svg"; // fondo negro a sangre (Android/iOS recortan)
+const ROUNDED = "brand-src/svg/icono-negro-redondeado.svg"; // esquinas redondeadas (favicon)
 mkdirSync("public/icons", { recursive: true });
 
 const png = (src, size, file) => sharp(src, { density: 300 }).resize(size, size).png({ compressionLevel: 9 }).toFile(file);

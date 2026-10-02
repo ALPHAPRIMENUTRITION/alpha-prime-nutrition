@@ -8,6 +8,13 @@ import { ServiceWorkerRegister } from "@/components/pwa/sw-register";
 export const metadata: Metadata = {
   title: { default: "Alpha Prime Nutrition", template: "%s · Alpha Prime" },
   description: "Coaching nutricional y de entrenamiento personalizado. Unleash your power.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://alpha-prime-nutrition.netlify.app"),
+  // Vista previa al compartir links (WhatsApp, etc.): ícono negro de la marca
+  openGraph: {
+    siteName: "Alpha Prime Nutrition",
+    type: "website",
+    images: [{ url: "/icons/icon-512.png", width: 512, height: 512, alt: "Alpha Prime Nutrition" }],
+  },
   applicationName: "Alpha Prime Nutrition",
   robots: { index: false, follow: false }, // plataforma privada
   // Experiencia de app al instalarla en iPhone (Compartir → Agregar a inicio)
