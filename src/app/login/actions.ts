@@ -49,7 +49,7 @@ export async function signIn(_prev: LoginState, formData: FormData): Promise<Log
 
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", data.user.id).single();
   if (!profile) {
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: "local" });
     return { error: "Tu cuenta no tiene un perfil asignado. Contactá a tu coach." };
   }
 

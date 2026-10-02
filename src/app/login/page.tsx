@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { getSessionProfile, HOME_BY_ROLE } from "@/lib/auth";
 import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
 import { LoginForm } from "./login-form";
@@ -8,6 +10,9 @@ export const metadata: Metadata = { title: "Entrar" };
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const { next } = await searchParams;
+  // Sesión válida de verdad (consulta al servidor de autenticación) → a su inicio
+  const profile = await getSessionProfile();
+  if (profile) redirect(HOME_BY_ROLE[profile.role]);
 
   return (
     <main className="relative grid min-h-dvh place-items-center overflow-hidden px-4 py-10">

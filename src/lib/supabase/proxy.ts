@@ -3,7 +3,6 @@ import { NextResponse, type NextRequest } from "next/server";
 import { publicEnv } from "@/lib/env";
 
 const PROTECTED_PREFIXES = ["/coach", "/portal"];
-const AUTH_PAGES = ["/login"];
 
 /**
  * Refresca la sesión en cada petición y bloquea rutas privadas sin sesión.
@@ -41,12 +40,9 @@ export async function updateSession(request: NextRequest) {
     return copyCookies(response, NextResponse.redirect(url));
   }
 
-  if (isSignedIn && AUTH_PAGES.includes(path)) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/";
-    url.search = "";
-    return copyCookies(response, NextResponse.redirect(url));
-  }
+  // Ojo: no se redirige desde /login acá. Un token puede ser válido pero su sesión
+  // ya cerrada (p. ej. cerró sesión en otro aparato); eso lo detecta getUser() en la
+  // página de login. Redirigir aquí causaba un bucle /login ↔ /coach.
 
   return response;
 }
