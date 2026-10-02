@@ -9,6 +9,7 @@ import { dayMuscles, weekInfo, type LogRow } from "@/lib/training/plan";
 import { addDaysISO, formatDate, todayISO } from "@/lib/format";
 import { Card, EmptyState } from "@/components/ui";
 import { MembershipLocked } from "@/components/portal/membership-locked";
+import { NotIncluded } from "@/components/portal/not-included";
 import { MembershipWarning } from "@/components/portal/membership-warning";
 import { SessionLogger } from "@/components/training/session-logger";
 import { ProgressionView } from "@/components/training/progression-view";
@@ -21,6 +22,7 @@ const ISO = /^\d{4}-\d{2}-\d{2}$/;
 export default async function PortalTraining({ searchParams }: { searchParams: Promise<{ dia?: string; semana?: string; vista?: string; fecha?: string }> }) {
   const ctx = await getPortalContext();
   if (!ctx) return <Card><EmptyState title="Cuenta sin programa" /></Card>;
+  if (!ctx.client.has_training) return <NotIncluded what="training" coachName={ctx.coachName} />;
   if (!ctx.hasAccess) return <MembershipLocked suspended={ctx.membership === "suspended"} />;
 
   const sp = await searchParams;

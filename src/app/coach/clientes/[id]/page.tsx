@@ -35,6 +35,7 @@ import { ReviewForm } from "@/components/checkin/review-form";
 import { getClientPayments, getCoachPaymentSettings } from "@/lib/data/payments";
 import { ClientPaymentForm, PendingPaymentActions, RegisterPaymentForm } from "@/components/payments/coach-forms";
 import { PaymentList } from "@/components/payments/payment-list";
+import { serviceLabel } from "@/lib/services";
 import {
   accessLinkAction,
   addMeasurementAction,
@@ -84,7 +85,7 @@ export default async function ClientProfilePage({
   const supabase = await createClient();
   // RLS: si el cliente no es de este coach, no hay fila → 404 (no se revela que existe).
   const [{ data: client }, { data: overview }, { data: profile }] = await Promise.all([
-    supabase.from("clients").select("id, first_name, last_name, email, phone, goal, status, start_date, renewal_date, user_id").eq("id", id).maybeSingle(),
+    supabase.from("clients").select("id, first_name, last_name, email, phone, goal, status, start_date, renewal_date, user_id, has_nutrition, has_training").eq("id", id).maybeSingle(),
     supabase.from("coach_client_overview").select("*").eq("id", id).maybeSingle(),
     supabase.from("client_profiles").select("birth_date, sex, height_cm").eq("client_id", id).maybeSingle(),
   ]);
@@ -113,7 +114,10 @@ export default async function ClientProfilePage({
             <h1 className="font-display text-4xl font-extrabold uppercase leading-none tracking-tight">{name}</h1>
             <p className="mt-1 text-muted">{client.goal || "Sin objetivo definido"}</p>
           </div>
-          <Badge tone={MEMBERSHIP_TONE[o.membership_status]}>{MEMBERSHIP_LABEL[o.membership_status]}</Badge>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge tone="neutral">{serviceLabel(client)}</Badge>
+            <Badge tone={MEMBERSHIP_TONE[o.membership_status]}>{MEMBERSHIP_LABEL[o.membership_status]}</Badge>
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Link href={`/coach/clientes/${id}/editar`} className={buttonClass("secondary", "sm")}>
@@ -170,7 +174,9 @@ export default async function ClientProfilePage({
           invites={invitesEnabled()}
         />
       )}
+      {tab === "nutricion" && !client.has_nutrition && <ServiceNote id={id} what="nutrición" />}
       {tab === "nutricion" && <Nutrition id={id} />}
+      {tab === "entrenamiento" && !client.has_training && <ServiceNote id={id} what="entrenamiento" />}
       {tab === "entrenamiento" && <Training id={id} />}
       {tab === "checkins" && <Checkins id={id} coachId={coachIdForTabs} />}
       {tab === "pagos" && <Payments id={id} coachId={coachIdForTabs} renewal={client.renewal_date} />}
@@ -323,6 +329,15 @@ async function Training({ id }: { id: string }) {
 }
 
 // ---------------------------------------------------------------- Check-ins
+
+function ServiceNote({ id, what }: { id: string; what: string }) {
+  return (
+    <p role="note" className="rounded-xl border border-warn/30 bg-warn/10 px-4 py-3 text-sm">
+      Su servicio no incluye {what}: el cliente no ve esta sección en su app. Podés preparar el plan igual y, si lo contrata,{" "}
+      <Link href={`/coach/clientes/${id}/editar`} className="font-semibold underline">cambiá su servicio</Link>.
+    </p>
+  );
+}
 
 // ---------------------------------------------------------------- Pagos
 

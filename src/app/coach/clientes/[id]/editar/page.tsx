@@ -7,6 +7,7 @@ import { invitesEnabled } from "@/lib/invite";
 import { createClient } from "@/lib/supabase/server";
 import { updateClientAction } from "../../actions";
 import { ClientForm } from "@/components/coach/client-form";
+import { serviceFrom } from "@/lib/services";
 
 export const metadata: Metadata = { title: "Editar cliente" };
 
@@ -19,7 +20,7 @@ export default async function EditClientPage({ params }: { params: Promise<{ id:
 
   const supabase = await createClient();
   const [{ data: c }, { data: p }] = await Promise.all([
-    supabase.from("clients").select("first_name, last_name, email, phone, goal, start_date, renewal_date, user_id").eq("id", id).maybeSingle(),
+    supabase.from("clients").select("first_name, last_name, email, phone, goal, start_date, renewal_date, user_id, has_nutrition, has_training").eq("id", id).maybeSingle(),
     supabase.from("client_profiles").select("birth_date, sex, height_cm").eq("client_id", id).maybeSingle(),
   ]);
   if (!c) notFound();
@@ -38,7 +39,7 @@ export default async function EditClientPage({ params }: { params: Promise<{ id:
       <ClientForm
         mode="edit"
         action={updateClientAction.bind(null, id)}
-        defaults={{ ...c, birth_date: p?.birth_date, sex: p?.sex, height_cm: p?.height_cm != null ? Number(p.height_cm) : null }}
+        defaults={{ ...c, service: serviceFrom(c), birth_date: p?.birth_date, sex: p?.sex, height_cm: p?.height_cm != null ? Number(p.height_cm) : null }}
         emailLocked={Boolean(c.user_id)}
         invitesEnabled={invitesEnabled()}
         cancelHref={`/coach/clientes/${id}`}

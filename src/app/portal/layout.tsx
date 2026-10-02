@@ -6,6 +6,7 @@ import { SignOutButton } from "@/components/sign-out-button";
 import { NotificationsBell } from "@/components/notifications/bell";
 import { createClient } from "@/lib/supabase/server";
 import { countUnread } from "@/lib/data/notifications";
+import { getPortalContext } from "@/lib/data/portal";
 
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
   await requireRole("client");
@@ -13,7 +14,7 @@ export default async function PortalLayout({ children }: { children: React.React
   const supabase = await createClient();
   // Ídem para el pago: aviso 3 días antes de la renovación (máximo 1 por ciclo).
   await Promise.all([supabase.rpc("checkin_reminder_tick"), supabase.rpc("payment_reminder_tick")]);
-  const unread = await countUnread();
+  const [unread, ctx] = await Promise.all([countUnread(), getPortalContext()]);
 
   return (
     <div className="min-h-dvh">
@@ -30,7 +31,7 @@ export default async function PortalLayout({ children }: { children: React.React
         </div>
       </header>
       <main className="mx-auto w-full max-w-lg px-4 pb-28 pt-5">{children}</main>
-      <PortalNav />
+      <PortalNav nutrition={ctx?.client.has_nutrition ?? true} training={ctx?.client.has_training ?? true} />
     </div>
   );
 }

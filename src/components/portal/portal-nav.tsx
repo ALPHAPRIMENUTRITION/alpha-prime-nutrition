@@ -14,15 +14,16 @@ const ITEMS = [
   { label: "Membresía", href: "/portal/membresia", icon: CreditCard },
 ];
 
-export function PortalNav() {
+export function PortalNav({ nutrition = true, training = true }: { nutrition?: boolean; training?: boolean }) {
   const pathname = usePathname();
+  const items = ITEMS.filter((i) => (i.href !== "/portal/nutricion" || nutrition) && (i.href !== "/portal/entrenamiento" || training));
   return (
     <nav
       aria-label="Navegación"
       className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-graphite/95 pb-[env(safe-area-inset-bottom,0px)] backdrop-blur"
     >
-      <ul className="mx-auto grid max-w-lg" style={{ gridTemplateColumns: `repeat(${ITEMS.length}, minmax(0, 1fr))` }}>
-        {ITEMS.map(({ label, href, icon: Icon }) => {
+      <ul className="mx-auto grid max-w-lg" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
+        {items.map(({ label, href, icon: Icon }) => {
           const on = href === "/portal" ? pathname === href : pathname.startsWith(href);
           return (
             <li key={href}>

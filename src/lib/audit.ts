@@ -24,6 +24,8 @@ const FIELD: Record<string, { label: string; unit?: string }> = {
   start_date: { label: "Fecha de inicio" },
   renewal_date: { label: "Fecha de renovación" },
   payment_link: { label: "Link de pago" },
+  has_nutrition: { label: "Incluye nutrición" },
+  has_training: { label: "Incluye entrenamiento" },
   payment_amount_cents: { label: "Monto mensual" },
   user_id: { label: "Cuenta de acceso" },
   birth_date: { label: "Fecha de nacimiento" },

@@ -14,6 +14,8 @@ export interface PortalContext {
     goal: string | null;
     start_date: string;
     renewal_date: string | null;
+    has_nutrition: boolean;
+    has_training: boolean;
   };
   coachName: string;
   checkinWeekday: number;
@@ -23,12 +25,20 @@ export interface PortalContext {
   subscription: { status: string; plan_name: string | null; amount_cents: number | null; current_period_end: string | null } | null;
 }
 
+/** Lo que el cliente no tiene contratado tampoco se le pregunta en el check-in. */
+function withServices(config: CheckinConfig, c: { has_nutrition: boolean; has_training: boolean }): CheckinConfig {
+  const hidden = new Set(config.hidden);
+  if (!c.has_nutrition) hidden.add("nutrition_adherence_pct");
+  if (!c.has_training) hidden.add("workouts");
+  return { ...config, hidden: [...hidden] };
+}
+
 /** Datos base del cliente que inició sesión. RLS solo devuelve SU ficha. */
 export const getPortalContext = cache(async (): Promise<PortalContext | null> => {
   const supabase = await createClient();
   const { data: client } = await supabase
     .from("clients")
-    .select("id, coach_id, first_name, last_name, goal, start_date, renewal_date")
+    .select("id, coach_id, first_name, last_name, goal, start_date, renewal_date, has_nutrition, has_training")
     .maybeSingle();
   if (!client) return null;
 
@@ -46,7 +56,7 @@ export const getPortalContext = cache(async (): Promise<PortalContext | null> =>
     client,
     coachName: st.coach_name || "Tu coach",
     checkinWeekday: st.weekday ?? 1,
-    checkinConfig: parseCheckinConfig(st.config),
+    checkinConfig: withServices(parseCheckinConfig(st.config), client),
     membership,
     hasAccess: hasContentAccess(membership),
     subscription,

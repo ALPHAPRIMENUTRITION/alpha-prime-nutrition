@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createAccessLink, type InviteResult } from "@/lib/invite";
+import { serviceFlags } from "@/lib/services";
 import {
   clientSchema,
   fieldErrors,
@@ -66,6 +67,7 @@ export async function createClientAction(_prev: FormState, fd: FormData): Promis
       goal: d.goal ?? null,
       start_date: d.start_date,
       renewal_date: d.renewal_date ?? null,
+      ...serviceFlags(d.service),
     })
     .select("id")
     .single();
@@ -120,6 +122,7 @@ export async function updateClientAction(clientId: string, _prev: FormState, fd:
       goal: d.goal ?? null,
       start_date: d.start_date,
       renewal_date: d.renewal_date ?? null,
+      ...serviceFlags(d.service),
     })
     .eq("id", clientId);
   if (error) {

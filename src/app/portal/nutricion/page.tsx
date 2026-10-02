@@ -7,6 +7,7 @@ import { DAY_NAMES, DAY_SHORT, dayMacros, formatQty, itemMacros, optionMacros, s
 import { todayISO } from "@/lib/format";
 import { Card, EmptyState } from "@/components/ui";
 import { MembershipLocked } from "@/components/portal/membership-locked";
+import { NotIncluded } from "@/components/portal/not-included";
 import { MembershipWarning } from "@/components/portal/membership-warning";
 import { MacroSummary } from "@/components/nutrition/macro-summary";
 import { cn } from "@/lib/cn";
@@ -18,6 +19,7 @@ const m0 = (n: number) => Math.round(n);
 export default async function PortalNutrition({ searchParams }: { searchParams: Promise<{ dia?: string; semana?: string }> }) {
   const ctx = await getPortalContext();
   if (!ctx) return <Card><EmptyState title="Cuenta sin programa" /></Card>;
+  if (!ctx.client.has_nutrition) return <NotIncluded what="nutrition" coachName={ctx.coachName} />;
   if (!ctx.hasAccess) return <MembershipLocked suspended={ctx.membership === "suspended"} />;
 
   const data = await getActivePlanForClient(ctx.client.id);

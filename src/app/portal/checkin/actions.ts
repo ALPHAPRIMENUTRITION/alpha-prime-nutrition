@@ -25,7 +25,13 @@ export async function submitCheckinAction(input: Record<string, unknown>, answer
   const { data: existing } = await supabase.from("checkins").select("id, status").eq("client_id", ctx.client.id).eq("week_start", monday).maybeSingle();
   if (existing?.status === "reviewed") return { ok: false, error: "Tu coach ya revisó el check-in de esta semana." };
 
-  const row = { ...parsed.data, extra_answers: extra };
+  const row = {
+    ...parsed.data,
+    // Lo que no tiene contratado no cuenta para la adherencia
+    ...(ctx.client.has_nutrition ? {} : { nutrition_adherence_pct: null }),
+    ...(ctx.client.has_training ? {} : { workouts_completed: null, workouts_planned: null }),
+    extra_answers: extra,
+  };
   const res = existing
     ? await supabase.from("checkins").update(row).eq("id", existing.id).select("id").single()
     : await supabase.from("checkins").insert({ ...row, client_id: ctx.client.id, week_start: monday }).select("id").single();

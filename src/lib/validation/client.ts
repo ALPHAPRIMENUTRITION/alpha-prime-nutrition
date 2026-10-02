@@ -23,6 +23,7 @@ export const clientSchema = z
     goal: optText(200),
     start_date: isoDate,
     renewal_date: optDate,
+    service: z.enum(["both", "nutrition", "training"], { message: "Elegí el servicio" }).default("both"),
   })
   .refine((d) => !d.renewal_date || d.renewal_date >= d.start_date, {
     message: "La renovación no puede ser antes del inicio",

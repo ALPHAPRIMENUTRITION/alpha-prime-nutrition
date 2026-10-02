@@ -5,6 +5,7 @@ import { useActionState } from "react";
 import type { FormState } from "@/app/coach/clientes/actions";
 import { Button, Field, Input, Select, Textarea, buttonClass } from "@/components/ui";
 import { InviteLinkCard } from "@/components/coach/invite-link-card";
+import { SERVICE_OPTIONS, type ServiceKey } from "@/lib/services";
 
 export interface ClientFormDefaults {
   first_name?: string;
@@ -17,6 +18,7 @@ export interface ClientFormDefaults {
   goal?: string | null;
   start_date?: string;
   renewal_date?: string | null;
+  service?: ServiceKey;
 }
 
 type Action = (prev: FormState, fd: FormData) => Promise<FormState>;
@@ -107,6 +109,14 @@ export function ClientForm({
 
       <fieldset className="grid gap-4 rounded-card border border-line bg-panel p-5 sm:grid-cols-2">
         <legend className="eyebrow px-1">Programa y membresía</legend>
+        <div className="sm:col-span-2">
+          <Field label="Servicio contratado *" htmlFor="service" error={f.service}>
+            <Select id="service" name="service" defaultValue={v.service ?? "both"} className="w-full">
+              {SERVICE_OPTIONS.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
+            </Select>
+          </Field>
+          <p className="mt-1.5 text-xs text-faint">El cliente solo ve en su app lo que tiene contratado. Vos siempre podés preparar ambos planes.</p>
+        </div>
         <div className="sm:col-span-2">
           <Field label="Objetivo" htmlFor="goal" error={f.goal}>
             <Input id="goal" name="goal" placeholder="Ej. pérdida de grasa, ganancia muscular" defaultValue={v.goal ?? ""} />
