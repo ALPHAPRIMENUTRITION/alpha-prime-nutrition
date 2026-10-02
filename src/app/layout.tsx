@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false }, // plataforma privada
   // Experiencia de app al instalarla en iPhone (Compartir → Agregar a inicio)
   appleWebApp: { capable: true, title: "Alpha Prime", statusBarStyle: "black-translucent" },
-  icons: { icon: [{ url: "/icons/favicon-48.png", sizes: "48x48", type: "image/png" }, { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }], apple: "/icons/apple-touch-icon.png" },
+  icons: { icon: [{ url: "/brand/icono-app.svg", type: "image/svg+xml" }, { url: "/icons/favicon-48.png", sizes: "48x48", type: "image/png" }, { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }], apple: "/icons/apple-touch-icon.png" },
   formatDetection: { telephone: false },
 };
 

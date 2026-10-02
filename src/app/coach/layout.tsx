@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Bell } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { Logo, LogoMark } from "@/components/brand/logo";
+import { Logo, LogoHorizontal } from "@/components/brand/logo";
 import { Avatar } from "@/components/ui";
 import { CoachNav } from "@/components/coach/coach-nav";
 import { SignOutButton } from "@/components/sign-out-button";
@@ -46,8 +46,7 @@ export default async function CoachLayout({ children }: { children: React.ReactN
         {/* Barra superior (móvil) */}
         <header className="sticky top-0 z-20 flex items-center justify-between border-b border-line bg-ink/90 px-4 pb-3 pt-[calc(env(safe-area-inset-top,0px)+12px)] backdrop-blur lg:hidden">
           <Link href="/coach" className="flex items-center gap-2" aria-label="Panel">
-            <LogoMark className="h-9 w-9" />
-            <span className="font-display text-lg font-extrabold uppercase tracking-wide">Alpha Prime</span>
+            <LogoHorizontal className="-ml-3 h-10" />
           </Link>
           <div className="flex items-center gap-1">
             <NotificationsLink unread={unread ?? 0} />

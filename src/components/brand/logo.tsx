@@ -1,38 +1,30 @@
+/* eslint-disable @next/next/no-img-element */
 import { cn } from "@/lib/cn";
 
-/** Escudo de la marca (imagen circular). Se usa chico en barras y grande en las pantallas de acceso. */
-export function LogoMark({ className, large = false }: { className?: string; large?: boolean }) {
-  return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={large ? "/brand/logo-512.webp" : "/brand/logo-160.webp"}
-      alt=""
-      aria-hidden="true"
-      width={large ? 512 : 160}
-      height={large ? 512 : 160}
-      decoding="async"
-      className={cn("h-8 w-8 shrink-0 rounded-full", className)}
-    />
-  );
+// Logo de la marca (SVG vectorial, versiones para fondo oscuro).
+
+/** Solo el símbolo "A". */
+export function LogoMark({ className }: { className?: string; large?: boolean }) {
+  return <img src="/brand/simbolo.svg" alt="" aria-hidden="true" width={100} height={100} className={cn("h-8 w-8 shrink-0", className)} />;
+}
+
+/** Símbolo + "ALPHA PRIME / NUTRITION" en línea (barras superiores y menú). */
+export function LogoHorizontal({ className }: { className?: string }) {
+  return <img src="/brand/logo-horizontal.svg" alt="Alpha Prime Nutrition" width={600} height={140} className={cn("h-9 w-auto shrink-0", className)} />;
 }
 
 export function Logo({ withTagline = false, className }: { withTagline?: boolean; className?: string }) {
-  // Pantallas de acceso: escudo grande, que ya incluye el nombre
+  // Pantallas de acceso: versión vertical con "Unleash your power"
   if (withTagline) {
     return (
-      <div className={cn("flex flex-col items-start gap-3", className)}>
-        <LogoMark large className="h-28 w-28 shadow-[0_0_40px_rgba(227,36,47,0.18)]" />
-        <span className="sr-only">Alpha Prime Nutrition</span>
-        <div className="eyebrow !text-[10px] !tracking-[0.28em]">Unleash your power</div>
-      </div>
+      <img
+        src="/brand/logo-vertical.svg"
+        alt="Alpha Prime Nutrition · Unleash your power"
+        width={640}
+        height={470}
+        className={cn("-ml-6 h-auto w-64 max-w-full", className)}
+      />
     );
   }
-  return (
-    <div className={cn("flex items-center gap-2.5", className)}>
-      <LogoMark className="h-10 w-10" />
-      <div className="font-display text-[19px] font-extrabold uppercase leading-none tracking-[0.04em]">
-        Alpha Prime <span className="text-red">Nutrition</span>
-      </div>
-    </div>
-  );
+  return <LogoHorizontal className={cn("-ml-1.5 h-12", className)} />;
 }

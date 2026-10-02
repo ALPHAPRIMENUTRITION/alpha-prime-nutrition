@@ -11,7 +11,7 @@ export default function OfflinePage() {
   return (
     <main className="grid min-h-dvh place-items-center px-6 pt-[env(safe-area-inset-top,0px)] text-center">
       <div className="flex max-w-xs flex-col items-center gap-5">
-        <LogoMark className="h-14 w-14" />
+        <LogoMark className="h-16 w-16" />
         <span className="grid h-14 w-14 place-items-center rounded-full bg-panel-2 text-muted">
           <WifiOff size={26} aria-hidden="true" />
         </span>
