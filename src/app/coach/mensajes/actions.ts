@@ -9,9 +9,13 @@ export async function saveTemplatesAction(list: MessageTemplate[] | null): Promi
   const coach = await requireRole("coach");
   let value: MessageTemplate[] | null = null;
   if (list) {
-    if (!Array.isArray(list) || list.length > 15) return { ok: false, error: "Máximo 15 mensajes." };
+    if (!Array.isArray(list) || list.length > 20) return { ok: false, error: "Máximo 20 mensajes." };
     value = list
-      .map((t) => ({ title: String(t?.title ?? "").trim().slice(0, 60), body: String(t?.body ?? "").trim().slice(0, 1500) }))
+      .map((t) => ({
+        title: String(t?.title ?? "").trim().slice(0, 60),
+        body: String(t?.body ?? "").trim().slice(0, 1500),
+        ...(t?.service && ["nutrition", "training", "both", "personal"].includes(t.service) ? { service: t.service } : {}),
+      }))
       .filter((t) => t.title && t.body);
     if (!value.length) return { ok: false, error: "Dejá al menos un mensaje con título y texto." };
   }

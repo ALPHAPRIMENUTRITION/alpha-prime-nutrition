@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { Plus, RotateCcw, Save, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui";
-import { DEFAULT_TEMPLATES, TEMPLATE_VARS, type MessageTemplate } from "@/lib/messages";
+import { DEFAULT_TEMPLATES, TEMPLATE_SERVICES, TEMPLATE_VARS, type MessageTemplate, type TemplateService } from "@/lib/messages";
 import { saveTemplatesAction } from "@/app/coach/mensajes/actions";
 
 const field = "w-full rounded-xl border border-line bg-ink px-3.5 text-base text-fg placeholder:text-faint focus:border-faint focus:outline-none";
@@ -42,11 +42,25 @@ export function TemplatesEditor({ initial }: { initial: MessageTemplate[] }) {
               <Trash2 size={17} />
             </button>
           </div>
+          <label className="flex items-center gap-2 text-sm text-muted">
+            Se muestra en:
+            <select
+              value={t.service ?? ""}
+              onChange={(e) => set(i, { service: (e.target.value || undefined) as TemplateService | undefined })}
+              className="h-9 rounded-lg border border-line bg-ink px-2 text-sm text-fg"
+            >
+              {TEMPLATE_SERVICES.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </label>
           <textarea aria-label={`Texto de ${t.title}`} value={t.body} maxLength={1500} rows={6} onChange={(e) => set(i, { body: e.target.value })} className={`${field} py-3 leading-relaxed`} />
         </div>
       ))}
 
-      {list.length < 15 && (
+      {list.length < 20 && (
         <button type="button" onClick={() => setList((l) => [...l, { title: "Nuevo mensaje", body: "¡Hola {nombre}! " }])} className="flex h-12 items-center justify-center gap-2 rounded-card border border-dashed border-line text-sm font-semibold text-muted hover:text-fg">
           <Plus size={17} /> Agregar mensaje
         </button>

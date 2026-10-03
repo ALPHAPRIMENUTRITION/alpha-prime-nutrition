@@ -1,7 +1,17 @@
 // Mensajes rápidos de WhatsApp para responder solicitudes.
 // Variables: {nombre} {objetivo} {servicio} {evaluacion} {horario}
 
-export type MessageTemplate = { title: string; body: string };
+export type TemplateService = "nutrition" | "training" | "both" | "personal";
+/** service vacío = sirve para todos los servicios */
+export type MessageTemplate = { title: string; body: string; service?: TemplateService };
+
+export const TEMPLATE_SERVICES: { value: TemplateService | ""; label: string }[] = [
+  { value: "", label: "Todos los servicios" },
+  { value: "nutrition", label: "Alimentación" },
+  { value: "training", label: "Entrenamiento online" },
+  { value: "both", label: "Completo" },
+  { value: "personal", label: "Personal 1 a 1" },
+];
 
 export const TEMPLATE_VARS = [
   { key: "{nombre}", hint: "Andrea" },
@@ -17,16 +27,28 @@ export const DEFAULT_TEMPLATES: MessageTemplate[] = [
     body: "¡Hola {nombre}! 👋 Soy Carlos de Alpha Prime. Recibí tu solicitud para {servicio} con el objetivo de {objetivo}. ¡Con gusto te ayudo!\n\n¿Tenés unos minutos para contarte cómo funciona?",
   },
   {
-    title: "Cómo funciona y precio",
-    body: "Así funciona {servicio}:\n\n✅ Evaluación inicial (online o presencial)\n✅ Plan hecho a tu medida en la app Alpha Prime\n✅ Check-in cada semana y ajustes según tu progreso\n✅ Comunicación directa conmigo por WhatsApp\n\n💰 Inversión: $[PRECIO] al mes\n\n¿Te gustaría empezar, {nombre}?",
+    title: "Info y precio · Alimentación",
+    service: "nutrition",
+    body: "Así funciona el plan de alimentación, {nombre}:\n\n✅ Evaluación inicial (online o presencial)\n✅ Plan hecho a tu medida según tus gustos, horarios y objetivo\n✅ Opciones para cada comida, todo en tu app Alpha Prime\n✅ Check-in cada semana y ajustes según tu progreso\n✅ Tus dudas directo conmigo por el chat de la app\n\n💰 Inversión: $[PRECIO] al mes\n\n¿Te gustaría empezar?",
+  },
+  {
+    title: "Info y precio · Entrenamiento",
+    service: "training",
+    body: "Así funciona el entrenamiento online, {nombre}:\n\n✅ Rutina hecha para vos según tu nivel, tus días disponibles y dónde entrenás (gym o casa)\n✅ En la app ves cada ejercicio con series, repeticiones y descansos\n✅ Registrás tus pesos y la rutina progresa semana a semana\n✅ Check-in semanal y ajustes según cómo te vaya\n\n💰 Inversión: $[PRECIO] al mes\n\n¿Te gustaría empezar?",
+  },
+  {
+    title: "Info y precio · Completo",
+    service: "both",
+    body: "El plan completo es el que más resultados da, {nombre} 🔥\n\n✅ Evaluación inicial (online o presencial)\n✅ Plan de alimentación a tu medida\n✅ Rutina de entrenamiento con progresión semana a semana\n✅ Todo en tu app Alpha Prime: comidas, rutina, check-ins y progreso\n✅ Check-in semanal y ajustes de los dos planes\n✅ Tus dudas directo conmigo por el chat de la app\n\n💰 Inversión: $[PRECIO] al mes\n\n¿Te gustaría empezar?",
+  },
+  {
+    title: "Info y precio · Personal 1 a 1",
+    service: "personal",
+    body: "¡Hola {nombre}! Así funciona el entrenamiento personal 1 a 1:\n\n✅ Sesiones de 1 hora conmigo, de lunes a viernes\n✅ Te corrijo la técnica en cada ejercicio\n✅ Tu rutina y tu progreso quedan registrados en la app\n🕒 Me dijiste que preferís entrenar {horario}\n📍 Lugar: [GIMNASIO / DIRECCIÓN]\n\n💰 Inversión: $[PRECIO] al mes ([X] sesiones por semana)\n\n¿Qué días te quedarían bien para empezar?",
   },
   {
     title: "Agendar evaluación",
     body: "¡Perfecto, {nombre}! Agendemos tu evaluación {evaluacion}. ¿Qué día y hora te quedan mejor esta semana?",
-  },
-  {
-    title: "Personal 1 a 1: horarios",
-    body: "¡Hola {nombre}! Las sesiones de entrenamiento personal son de 1 hora, de lunes a viernes. Me dijiste que preferís entrenar {horario}. ¿Qué días te gustaría empezar?",
   },
   {
     title: "Datos de pago",
@@ -38,13 +60,28 @@ export const DEFAULT_TEMPLATES: MessageTemplate[] = [
   },
 ];
 
+const SERVICE_KEYS = new Set(["nutrition", "training", "both", "personal"]);
+
 export function normalizeTemplates(raw: unknown): MessageTemplate[] {
   if (!Array.isArray(raw)) return DEFAULT_TEMPLATES;
   const list = raw
     .filter((t): t is MessageTemplate => !!t && typeof t.title === "string" && typeof t.body === "string")
-    .map((t) => ({ title: t.title.slice(0, 60), body: t.body.slice(0, 1500) }))
-    .slice(0, 15);
+    .map((t) => ({
+      title: t.title.slice(0, 60),
+      body: t.body.slice(0, 1500),
+      ...(t.service && SERVICE_KEYS.has(t.service) ? { service: t.service } : {}),
+    }))
+    .slice(0, 20);
   return list.length ? list : DEFAULT_TEMPLATES;
+}
+
+/** Mensajes que aplican a una solicitud: los de su servicio primero, después los generales (con su índice original). */
+export function templatesFor(list: MessageTemplate[], service: string | null) {
+  const withIdx = list.map((t, idx) => ({ ...t, idx }));
+  const own = withIdx.filter((t) => t.service && t.service === service);
+  const general = withIdx.filter((t) => !t.service);
+  // El primer contacto (primer general) va siempre primero
+  return [...general.slice(0, 1), ...own, ...general.slice(1)];
 }
 
 /** "CARLOS ernesto" → "Carlos Ernesto" */

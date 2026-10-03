@@ -7,7 +7,7 @@ import { buttonClass } from "@/components/ui";
 import { cn } from "@/lib/cn";
 
 /** Mensajes rápidos ya personalizados para una solicitud. */
-export function QuickReplies({ intakeId, messages }: { intakeId: string; messages: { title: string; text: string }[] }) {
+export function QuickReplies({ intakeId, messages }: { intakeId: string; messages: { idx: number; title: string; text: string }[] }) {
   const [open, setOpen] = useState(0);
   const [copied, setCopied] = useState<number | null>(null);
   const cur = messages[open];
@@ -48,7 +48,7 @@ export function QuickReplies({ intakeId, messages }: { intakeId: string; message
             <p className="text-xs text-warn">Este mensaje tiene partes entre [CORCHETES] para completar. Podés dejarlas fijas en «Editar».</p>
           )}
           <div className="flex flex-wrap gap-2">
-            <a href={`/coach/solicitudes/${intakeId}/whatsapp?m=${open}`} target="_blank" rel="noopener noreferrer" className={buttonClass("primary", "sm")}>
+            <a href={`/coach/solicitudes/${intakeId}/whatsapp?m=${cur.idx}`} target="_blank" rel="noopener noreferrer" className={buttonClass("primary", "sm")}>
               <MessageCircle size={16} /> Enviar por WhatsApp
             </a>
             <button type="button" onClick={() => copy(open, cur.text)} className={buttonClass("secondary", "sm")}>
