@@ -204,7 +204,10 @@ export function Landing() {
       {/* Sobre mí */}
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:py-24">
         <div className="grid items-center gap-10 lg:grid-cols-[auto_1fr]">
-          <img src={SITE.coachPhoto} alt={SITE.coachName} width={320} height={320} className="h-48 w-48 rounded-full border-4 border-red object-cover sm:h-64 sm:w-64" />
+          <div className="relative mx-auto w-64 sm:w-72 lg:mx-0">
+            <div aria-hidden className="absolute -bottom-3 -right-3 h-full w-full rounded-[1.75rem] border-2 border-red" />
+            <img src={SITE.coachPhoto} alt={SITE.coachName} width={1086} height={1448} className="relative aspect-[3/4] w-full rounded-[1.75rem] object-cover object-top shadow-2xl shadow-black/60" />
+          </div>
           <div>
             <p className="eyebrow text-red">Tu asesor</p>
             <h2 className="mt-3 font-display text-5xl font-extrabold uppercase leading-none sm:text-6xl">{SITE.coachName}</h2>
