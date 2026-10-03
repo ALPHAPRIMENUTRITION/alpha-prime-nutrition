@@ -52,7 +52,7 @@ export const DEFAULT_TEMPLATES: MessageTemplate[] = [
   },
   {
     title: "Datos de pago",
-    body: "¡Excelente decisión, {nombre}! 🔥 Para reservar tu lugar podés pagar aquí: [LINK DE PAGO]\n\nApenas lo confirme te mando tu acceso a la app y un cuestionario para armar tu plan.",
+    body: "¡Excelente decisión, {nombre}! 🔥 Para reservar tu lugar podés pagar aquí: [LINK DE PAGO]\n\nCuando lo hagás, mandame por aquí:\n📸 La captura del pago\n📧 Tu correo electrónico: es con el que vas a entrar a tu app Alpha Prime\n\nApenas lo confirme te mando tu acceso a la app y ahí mismo llenás el cuestionario para armar tu plan.",
   },
   {
     title: "Seguimiento",
