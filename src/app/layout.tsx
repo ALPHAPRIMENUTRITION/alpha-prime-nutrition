@@ -4,6 +4,7 @@ import "@fontsource/big-shoulders-display/800";
 import "@fontsource-variable/archivo";
 import "./globals.css";
 import { ServiceWorkerRegister } from "@/components/pwa/sw-register";
+import { BrandSplash, SPLASH_BOOT } from "@/components/brand/splash";
 
 export const metadata: Metadata = {
   title: { default: "Alpha Prime Nutrition", template: "%s · Alpha Prime" },
@@ -32,8 +33,12 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es">
+    <html lang="es" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: SPLASH_BOOT }} />
+      </head>
       <body className="min-h-dvh">
+        <BrandSplash />
         {children}
         <ServiceWorkerRegister />
       </body>
