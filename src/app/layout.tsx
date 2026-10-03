@@ -8,7 +8,7 @@ import { ServiceWorkerRegister } from "@/components/pwa/sw-register";
 export const metadata: Metadata = {
   title: { default: "Alpha Prime Nutrition", template: "%s · Alpha Prime" },
   description: "Coaching nutricional y de entrenamiento personalizado. Unleash your power.",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://alpha-prime-nutrition.netlify.app"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://alphaprimenutrition.com"),
   // Vista previa al compartir links (WhatsApp, etc.): ícono negro de la marca
   openGraph: {
     siteName: "Alpha Prime Nutrition",

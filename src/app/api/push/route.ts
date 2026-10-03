@@ -33,7 +33,7 @@ export async function POST(req: Request) {
   const n = data as Claimed | null;
   if (!n) return Response.json({ ok: true, sent: 0 });
 
-  webpush.setVapidDetails("https://alpha-prime-nutrition.netlify.app", VAPID_PUBLIC_KEY, priv);
+  webpush.setVapidDetails("https://alphaprimenutrition.com", VAPID_PUBLIC_KEY, priv);
   const payload = JSON.stringify({ title: n.title, body: n.body ?? "", link: n.link || "/", tag: n.id });
 
   const gone: string[] = [];
