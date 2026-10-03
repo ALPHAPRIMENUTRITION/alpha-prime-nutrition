@@ -18,6 +18,10 @@ import { cn } from "@/lib/cn";
 import { Avatar, Badge, Card, EmptyState, buttonClass } from "@/components/ui";
 import { ConfirmButton } from "@/components/confirm-button";
 import { AccessLinkButton } from "@/components/coach/access-link-button";
+import { latestClientIntake } from "@/lib/data/intakes";
+import { IntakeAnswersView } from "@/components/intake/intake-answers";
+import { ShareLink } from "@/components/intake/share-link";
+import { publicEnv } from "@/lib/env";
 import { MeasurementForm } from "@/components/coach/measurement-form";
 import { NoteForm } from "@/components/coach/note-form";
 import { ProgressView } from "@/components/progress/progress-view";
@@ -53,6 +57,7 @@ export const metadata: Metadata = { title: "Perfil del cliente" };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const TABS = [
   { id: "resumen", label: "Resumen" },
+  { id: "cuestionario", label: "Cuestionario" },
   { id: "nutricion", label: "Nutrición" },
   { id: "entrenamiento", label: "Entrenamiento" },
   { id: "checkins", label: "Check-ins" },
@@ -186,6 +191,7 @@ export default async function ClientProfilePage({
           invites={invitesEnabled()}
         />
       )}
+      {tab === "cuestionario" && <Questionnaire id={id} firstName={client.first_name} phone={client.phone} />}
       {tab === "nutricion" && !client.has_nutrition && <ServiceNote id={id} what="nutrición" />}
       {tab === "nutricion" && <Nutrition id={id} />}
       {tab === "entrenamiento" && !client.has_training && <ServiceNote id={id} what="entrenamiento" />}
@@ -569,5 +575,36 @@ async function History({ id }: { id: string }) {
     </Card>
   ) : (
     <Card><EmptyState title="Sin cambios registrados" /></Card>
+  );
+}
+
+async function Questionnaire({ id, firstName, phone }: { id: string; firstName: string; phone: string | null }) {
+  const supabase = await createClient();
+  const [{ data: row }, intake] = await Promise.all([
+    supabase.from("clients").select("intake_token").eq("id", id).maybeSingle(),
+    latestClientIntake(id),
+  ]);
+  const url = row?.intake_token ? `${publicEnv().NEXT_PUBLIC_SITE_URL}/cuestionario/${row.intake_token}` : null;
+
+  return (
+    <div className="flex flex-col gap-5">
+      {url && (
+        <Card className="flex flex-col gap-3 p-5">
+          <h2 className="eyebrow">{intake ? "Volver a enviar el cuestionario" : "Pedile que llene el cuestionario"}</h2>
+          <p className="text-sm text-muted">Es su link personal: lo que responda queda guardado aquí y te llega una notificación.</p>
+          <ShareLink url={url} phone={phone} waText={`¡Hola ${firstName}! Para armar tu plan a tu medida, llená este cuestionario (te toma unos 5 minutos):`} />
+        </Card>
+      )}
+      {intake ? (
+        <>
+          <p className="text-sm text-muted">Respondido el {formatDate(intake.created_at)}</p>
+          <IntakeAnswersView answers={intake.answers} />
+        </>
+      ) : (
+        <Card>
+          <EmptyState title="Sin cuestionario" description="Todavía no lo llenó. Mandale su link y sus respuestas aparecen aquí." />
+        </Card>
+      )}
+    </div>
   );
 }

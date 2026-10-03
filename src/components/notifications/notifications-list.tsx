@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bell, CalendarCheck, ClipboardCheck, CreditCard, Dumbbell, RefreshCw, Utensils } from "lucide-react";
+import { Bell, CalendarCheck, ClipboardCheck, ClipboardList, CreditCard, Dumbbell, RefreshCw, Utensils } from "lucide-react";
 import { formatDate, relativeDays } from "@/lib/format";
 import { Card, EmptyState } from "@/components/ui";
 import { MarkAllRead } from "@/components/notifications/mark-all-read";
@@ -18,6 +18,7 @@ const ICON: Record<string, typeof Bell> = {
   membership_expired: CreditCard,
   renewal_success: CreditCard,
   payment_reported: CreditCard,
+  intake_submitted: ClipboardList,
 };
 
 export function NotificationsList({ items }: { items: NotificationRow[] }) {

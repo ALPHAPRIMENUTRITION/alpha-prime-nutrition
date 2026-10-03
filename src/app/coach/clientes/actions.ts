@@ -92,6 +92,13 @@ export async function createClientAction(_prev: FormState, fd: FormData): Promis
     await supabase.from("coach_notes").insert({ client_id: clientId, coach_id: coach.id, body: d.note });
   }
 
+  // Si viene de una solicitud del cuestionario, queda vinculada al expediente
+  const intakeId = String(fd.get("intake_id") ?? "");
+  if (UUID.test(intakeId)) {
+    await supabase.from("intakes").update({ client_id: clientId, status: "converted" }).eq("id", intakeId);
+    revalidatePath("/coach/solicitudes");
+  }
+
   let invite: InviteResult | undefined;
   if (d.create_account) {
     invite = await createAccessLink({ clientId, email: d.email, fullName: `${d.first_name} ${d.last_name}` });

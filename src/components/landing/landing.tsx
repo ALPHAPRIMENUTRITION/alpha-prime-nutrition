@@ -1,12 +1,12 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
-import { ArrowRight, Bell, Globe, Video, CalendarCheck, Dumbbell, LineChart, MessageCircle, Salad, Smartphone, Target, Utensils } from "lucide-react";
+import { ArrowRight, Bell, ClipboardList, Clock, Globe, Video, CalendarCheck, Dumbbell, LineChart, MessageCircle, Salad, Smartphone, Target, Utensils } from "lucide-react";
 import { LogoHorizontal } from "@/components/brand/logo";
 import { SITE, TESTIMONIALS, whatsappUrl } from "@/lib/site";
 import { cn } from "@/lib/cn";
 
 const STEPS = [
-  { title: "Me escribís", text: "Me contás tu objetivo, tu rutina diaria y lo que te gusta comer." },
+  { title: "Llenás el cuestionario", text: "En 5 minutos me contás tu objetivo, tus gustos de comida y tu rutina." },
   { title: "Evaluación online o presencial", text: "Por videollamada desde donde estés, o en persona con medidas. Tu plan es igual de personalizado." },
   { title: "Tu plan en la app", text: "Recibís tu plan de alimentación y tu rutina, hechos para vos." },
   { title: "Seguimiento semanal", text: "Cada semana mandás tu check-in y ajustamos lo necesario." },
@@ -31,6 +31,13 @@ const SERVICES = [
     text: "Alimentación y entrenamiento juntos: el camino más rápido para ver resultados.",
     items: ["Todo lo de alimentación", "Todo lo de entrenamiento", "Ajustes según tu progreso"],
     featured: true,
+  },
+  {
+    icon: Clock,
+    name: "Personal 1 a 1",
+    text: "Entrenamiento presencial conmigo: técnica, motivación y progreso en cada sesión.",
+    items: ["Sesiones de 1 hora", "De lunes a viernes", "Horario a convenir"],
+    presencial: true,
   },
 ];
 
@@ -94,7 +101,9 @@ export function Landing() {
               Plan de alimentación y rutina personalizados, con seguimiento cada semana desde tu propia app. Sin dietas copiadas, sin adivinar.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Cta />
+              <Link href="/empezar" className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-red px-6 text-base font-semibold text-white transition-colors hover:bg-red-hover">
+                <ClipboardList size={19} /> Quiero empezar
+              </Link>
               <a href="#como-funciona" className="inline-flex h-12 items-center justify-center rounded-xl border border-line px-6 font-semibold hover:border-faint">
                 Cómo funciona
               </a>
@@ -145,13 +154,14 @@ export function Landing() {
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:py-24">
         <p className="eyebrow text-red">Servicios</p>
         <h2 className="mt-3 font-display text-5xl font-extrabold uppercase leading-none sm:text-6xl">Elegí tu plan</h2>
-        <div className="mt-10 grid gap-4 lg:grid-cols-3">
+        <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {SERVICES.map((s) => (
             <article
               key={s.name}
               className={cn("relative flex flex-col rounded-card border bg-panel p-6", s.featured ? "border-red shadow-[0_0_0_1px_var(--color-red)]" : "border-line")}
             >
               {s.featured && <span className="absolute -top-3 left-6 rounded-full bg-red px-3 py-1 text-xs font-bold uppercase tracking-wide text-white">Recomendado</span>}
+              {"presencial" in s && <span className="absolute -top-3 left-6 rounded-full border border-line bg-panel-2 px-3 py-1 text-xs font-bold uppercase tracking-wide">Presencial</span>}
               <s.icon size={28} className="text-red" />
               <h3 className="mt-4 font-display text-4xl font-extrabold uppercase">{s.name}</h3>
               <p className="mt-2 text-sm text-muted">{s.text}</p>
@@ -243,8 +253,13 @@ export function Landing() {
           <h2 className="font-display text-5xl font-extrabold uppercase leading-none sm:text-7xl">
             ¿Listo para <span className="text-red">empezar?</span>
           </h2>
-          <p className="mt-5 text-lg text-muted">Escribime y armamos juntos tu plan.</p>
-          <Cta className="mt-8 w-full sm:w-auto" label="Escribime por WhatsApp" />
+          <p className="mt-5 text-lg text-muted">Llená el cuestionario (5 minutos) o escribime, y armamos juntos tu plan.</p>
+          <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+            <Link href="/empezar" className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-red px-6 text-base font-semibold text-white transition-colors hover:bg-red-hover">
+              <ClipboardList size={19} /> Llenar el cuestionario
+            </Link>
+            <Cta className="border border-line bg-transparent hover:bg-panel-2" label="Escribime por WhatsApp" />
+          </div>
           {!SITE.whatsapp && <p className="mt-3 text-xs text-faint">(Falta configurar el número de WhatsApp)</p>}
         </div>
       </section>

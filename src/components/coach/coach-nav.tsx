@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { LayoutDashboard, Users, ClipboardCheck, CreditCard, Utensils } from "lucide-react";
+import { LayoutDashboard, Users, ClipboardCheck, ClipboardList, CreditCard, Utensils } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 const ITEMS = [
@@ -11,6 +11,8 @@ const ITEMS = [
   { label: "Planes", href: "/coach/planes", match: (p: string) => ["/coach/planes", "/coach/alimentos", "/coach/rutinas", "/coach/ejercicios"].some((x) => p.startsWith(x)), icon: Utensils },
   { label: "Check-ins", href: "/coach/checkins", match: (p: string, f: string | null) => p.startsWith("/coach/checkins") || f === "checkin", icon: ClipboardCheck },
   { label: "Pagos", href: "/coach/pagos", match: (p: string) => p.startsWith("/coach/pagos"), icon: CreditCard },
+  // En el celular se entra desde el panel (la barra de abajo tiene 5 espacios)
+  { label: "Solicitudes", href: "/coach/solicitudes", match: (p: string) => p.startsWith("/coach/solicitudes"), icon: ClipboardList, sideOnly: true },
 ];
 
 export function CoachNav({ variant }: { variant: "side" | "bottom" }) {
@@ -24,7 +26,7 @@ export function CoachNav({ variant }: { variant: "side" | "bottom" }) {
         className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-graphite/95 pb-[env(safe-area-inset-bottom,0px)] backdrop-blur lg:hidden"
       >
         <ul className="grid grid-cols-5">
-          {ITEMS.map(({ label, href, match, icon: Icon }) => {
+          {ITEMS.filter((i) => !("sideOnly" in i)).map(({ label, href, match, icon: Icon }) => {
             const on = match(pathname, filtro);
             return (
               <li key={label}>

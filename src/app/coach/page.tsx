@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { ChevronRight, ClipboardList, Plus } from "lucide-react";
+import { newIntakesCount } from "@/lib/data/intakes";
 import { requireRole } from "@/lib/auth";
 import { getDashboardStats, listClients, overdueClients, recentNotifications, upcomingRenewals } from "@/lib/data/coach";
 import { isClientFilter, CLIENT_FILTERS } from "@/lib/client-filters";
@@ -29,12 +30,13 @@ export default async function CoachDashboard({ searchParams }: { searchParams: P
   const q = (sp.q ?? "").slice(0, 80);
   const filtro = isClientFilter(sp.filtro) ? sp.filtro : "todos";
 
-  const [stats, clients, renewals, overdue, alerts] = await Promise.all([
+  const [stats, clients, renewals, overdue, alerts, newIntakes] = await Promise.all([
     getDashboardStats(),
     listClients(profile.id, { q, filtro }),
     upcomingRenewals(profile.id),
     overdueClients(profile.id),
     recentNotifications(),
+    newIntakesCount(),
   ]);
 
   const firstName = profile.full_name.split(" ")[0] || "Coach";
@@ -56,6 +58,22 @@ export default async function CoachDashboard({ searchParams }: { searchParams: P
 
       <InstallPrompt audience="coach" />
       <PushPrompt audience="coach" />
+
+      <Link
+        href="/coach/solicitudes"
+        className={`flex items-center gap-3 rounded-card border p-4 transition-colors hover:bg-panel-2 ${newIntakes ? "border-red/50 bg-red/10" : "border-line bg-panel"}`}
+      >
+        <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${newIntakes ? "bg-red text-white" : "bg-panel-2 text-muted"}`}>
+          <ClipboardList size={20} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block font-semibold">
+            {newIntakes ? `${newIntakes} ${newIntakes === 1 ? "solicitud nueva" : "solicitudes nuevas"}` : "Cuestionario inicial"}
+          </span>
+          <span className="block text-sm text-muted">{newIntakes ? "Personas que llenaron el cuestionario" : "Solicitudes y tu link para compartir"}</span>
+        </span>
+        <ChevronRight size={18} className="text-faint" />
+      </Link>
 
       {/* Métricas */}
       <section aria-label="Resumen" className="grid grid-cols-2 gap-3 sm:grid-cols-4">

@@ -19,6 +19,8 @@ export interface ClientFormDefaults {
   start_date?: string;
   renewal_date?: string | null;
   service?: ServiceKey;
+  /** Peso inicial sugerido (lb), p. ej. desde el cuestionario */
+  weight_lb?: string;
 }
 
 type Action = (prev: FormState, fd: FormData) => Promise<FormState>;
@@ -30,6 +32,7 @@ export function ClientForm({
   emailLocked = false,
   invitesEnabled,
   cancelHref,
+  hidden,
 }: {
   mode: "new" | "edit";
   action: Action;
@@ -37,6 +40,7 @@ export function ClientForm({
   emailLocked?: boolean;
   invitesEnabled: boolean;
   cancelHref: string;
+  hidden?: Record<string, string>;
 }) {
   const [state, formAction, pending] = useActionState<FormState, FormData>(action, {});
   const f = state.fields ?? {};
@@ -70,6 +74,9 @@ export function ClientForm({
 
   return (
     <form key={state.savedAt ?? "init"} action={formAction} className="flex flex-col gap-6" noValidate>
+      {Object.entries(hidden ?? {}).map(([k, val]) => (
+        <input key={k} type="hidden" name={k} value={val} />
+      ))}
       {state.error && (
         <p role="alert" className="rounded-xl border border-bad/30 bg-bad/10 px-4 py-3 text-sm text-bad">
           {state.error}
@@ -106,7 +113,7 @@ export function ClientForm({
         </Field>
         {mode === "new" && (
           <Field label="Peso inicial (lb)" htmlFor="weight_kg" error={f.weight_kg}>
-            <Input id="weight_kg" name="weight_kg" type="number" inputMode="decimal" step="0.1" placeholder="180" defaultValue={state.values?.weight_kg ?? ""} />
+            <Input id="weight_kg" name="weight_kg" type="number" inputMode="decimal" step="0.1" placeholder="180" defaultValue={state.values?.weight_kg ?? defaults.weight_lb ?? ""} />
           </Field>
         )}
       </fieldset>

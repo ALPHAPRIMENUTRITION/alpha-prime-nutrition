@@ -17,3 +17,10 @@ export function whatsappUrl(text = SITE.whatsappText) {
  * Fotos: subirlas a public/landing/ y poner la ruta, p. ej. "/landing/ana-antes.webp".
  */
 export const TESTIMONIALS: { name: string; text: string; result?: string; before?: string; after?: string }[] = [];
+
+/** Link de WhatsApp a un número de cliente (8 dígitos = El Salvador). */
+export function waTo(phone: string | null | undefined, text: string) {
+  const digits = (phone ?? "").replace(/\D/g, "");
+  const to = digits.length === 8 ? "503" + digits : digits;
+  return `https://wa.me/${to.length >= 8 ? to : ""}?text=${encodeURIComponent(text)}`;
+}
