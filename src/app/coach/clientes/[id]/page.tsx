@@ -22,6 +22,7 @@ import { clientIntakes, hasFullIntake } from "@/lib/data/intakes";
 import { titleCase } from "@/lib/messages";
 import { IntakeAnswersView } from "@/components/intake/intake-answers";
 import { ShareLink } from "@/components/intake/share-link";
+import { SendByChat } from "@/components/intake/send-by-chat";
 import { ClipboardList, MessageCircle } from "lucide-react";
 import { publicEnv } from "@/lib/env";
 import { MeasurementForm } from "@/components/coach/measurement-form";
@@ -51,6 +52,7 @@ import {
   addNoteAction,
   deleteMeasurementAction,
   deleteNoteAction,
+  sendIntakeByChatAction,
   setClientStatusAction,
 } from "../actions";
 
@@ -213,7 +215,7 @@ export default async function ClientProfilePage({
           invites={invitesEnabled()}
         />
       )}
-      {tab === "cuestionario" && <Questionnaire id={id} firstName={client.first_name} phone={client.phone} />}
+      {tab === "cuestionario" && <Questionnaire id={id} firstName={client.first_name} phone={client.phone} hasApp={Boolean(client.user_id)} />}
       {tab === "nutricion" && !client.has_nutrition && <ServiceNote id={id} what="nutrición" />}
       {tab === "nutricion" && <Nutrition id={id} />}
       {tab === "entrenamiento" && !client.has_training && <ServiceNote id={id} what="entrenamiento" />}
@@ -600,7 +602,7 @@ async function History({ id }: { id: string }) {
   );
 }
 
-async function Questionnaire({ id, firstName, phone }: { id: string; firstName: string; phone: string | null }) {
+async function Questionnaire({ id, firstName, phone, hasApp }: { id: string; firstName: string; phone: string | null; hasApp: boolean }) {
   const supabase = await createClient();
   const [{ data: row }, { full, short }] = await Promise.all([
     supabase.from("clients").select("intake_token").eq("id", id).maybeSingle(),
@@ -616,7 +618,8 @@ async function Questionnaire({ id, firstName, phone }: { id: string; firstName: 
           <p className="text-sm text-muted">
             Su link personal: salud, alimentación, entrenamiento y estilo de vida. Lo que responda queda guardado aquí y te llega una notificación.
           </p>
-          <ShareLink url={url} phone={phone} waText={`¡Hola ${firstName}! Bienvenido a Alpha Prime 💪 Para armar tu plan a tu medida, llená este cuestionario (te toma unos 5 minutos):`} />
+          {hasApp && <SendByChat action={sendIntakeByChatAction.bind(null, id)} chatHref={`/coach/chat/${id}`} />}
+          <ShareLink url={url} phone={phone} waText={`¡Hola ${titleCase(firstName)}! Bienvenido a Alpha Prime 💪 Para armar tu plan a tu medida, llená este cuestionario (te toma unos 5 minutos):`} />
         </Card>
       )}
       {full ? (

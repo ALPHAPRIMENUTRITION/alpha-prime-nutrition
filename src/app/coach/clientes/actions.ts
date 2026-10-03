@@ -276,3 +276,22 @@ export async function deletePhotoAction(clientId: string, photoId: string) {
   await supabase.from("progress_photos").delete().eq("id", photoId);
   revalidatePath(`/coach/clientes/${clientId}`);
 }
+
+/** Manda el link del cuestionario completo por el chat de la app. */
+export async function sendIntakeByChatAction(clientId: string): Promise<{ ok: boolean; error?: string }> {
+  await requireRole("coach");
+  const current = await ownedClient(clientId);
+  if (!current) return { ok: false, error: "Cliente no encontrado." };
+  if (!current.user_id) return { ok: false, error: "Todavía no tiene la app." };
+  const supabase = await createClient();
+  const { data } = await supabase.from("clients").select("intake_token").eq("id", clientId).maybeSingle();
+  if (!data?.intake_token) return { ok: false, error: "No se encontró su link." };
+  const url = `${publicEnv().NEXT_PUBLIC_SITE_URL}/cuestionario/${data.intake_token}`;
+  const name = current.first_name.charAt(0).toUpperCase() + current.first_name.slice(1).toLowerCase();
+  const { error } = await supabase.from("messages").insert({
+    client_id: clientId,
+    body: `¡Hola ${name}! Para armar tu plan a tu medida, llená este cuestionario (te toma unos 5 minutos):\n${url}`,
+  });
+  if (error) return { ok: false, error: "No se pudo enviar." };
+  return { ok: true };
+}

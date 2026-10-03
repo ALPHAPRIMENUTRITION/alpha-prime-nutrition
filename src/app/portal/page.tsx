@@ -12,6 +12,8 @@ import { MembershipLocked } from "@/components/portal/membership-locked";
 import { MembershipWarning } from "@/components/portal/membership-warning";
 import { InstallPrompt } from "@/components/pwa/install-prompt";
 import { PushPrompt } from "@/components/pwa/push-prompt";
+import { pendingIntakeLink } from "@/lib/data/intakes";
+import { ClipboardList, ChevronRight } from "lucide-react";
 import { AvatarUpload } from "@/components/profile/avatar-upload";
 import { getSessionProfile } from "@/lib/auth";
 
@@ -39,7 +41,7 @@ export default async function PortalHome() {
   const { client, membership } = ctx;
   if (!ctx.hasAccess) return <MembershipLocked suspended={membership === "suspended"} />;
 
-  const { checkins, measurements } = await getPortalHome(client.id);
+  const [{ checkins, measurements }, intakeHref] = await Promise.all([getPortalHome(client.id), pendingIntakeLink(client.id)]);
   const last = checkins[0];
   const lastAdherence = last ? (last.coach_adherence_override ?? last.adherence_score) : null;
 
@@ -63,6 +65,18 @@ export default async function PortalHome() {
       <MembershipWarning status={membership} />
       <InstallPrompt />
       <PushPrompt />
+      {intakeHref && (
+        <Link href={intakeHref} className="flex items-center gap-3 rounded-card border border-red/50 bg-red/10 p-4 hover:bg-red/15">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-red text-white">
+            <ClipboardList size={22} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block font-semibold">Completá tu cuestionario inicial</span>
+            <span className="block text-sm text-muted">5 minutos. Con esto tu coach arma tu plan a tu medida.</span>
+          </span>
+          <ChevronRight size={18} className="text-faint" />
+        </Link>
+      )}
 
       <section>
         <div className="flex items-center gap-4">

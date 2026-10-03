@@ -34,6 +34,24 @@ async function compress(file: File): Promise<Blob> {
   return blob;
 }
 
+/** Convierte los links del texto en enlaces tocables. */
+function Linkify({ text, mine }: { text: string; mine: boolean }) {
+  const parts = text.split(/(https?:\/\/[^\s]+)/g);
+  return (
+    <>
+      {parts.map((p, i) =>
+        /^https?:\/\//.test(p) ? (
+          <a key={i} href={p} target={p.includes(window.location.host) ? undefined : "_blank"} rel="noopener noreferrer" className={cn("break-all underline", mine ? "text-white" : "text-red")}>
+            {p}
+          </a>
+        ) : (
+          <span key={i}>{p}</span>
+        ),
+      )}
+    </>
+  );
+}
+
 const dayFmt = new Intl.DateTimeFormat("es-SV", { weekday: "long", day: "numeric", month: "long", timeZone: "America/El_Salvador" });
 const timeFmt = new Intl.DateTimeFormat("es-SV", { hour: "numeric", minute: "2-digit", timeZone: "America/El_Salvador" });
 const dayKey = (iso: string) => new Date(iso).toLocaleDateString("en-CA", { timeZone: "America/El_Salvador" });
@@ -221,7 +239,7 @@ export function ChatThread({
                         <Loader2 className="animate-spin" size={20} />
                       </span>
                     ))}
-                  {m.body && <p className="whitespace-pre-wrap break-words">{m.body}</p>}
+                  {m.body && <p className="whitespace-pre-wrap break-words"><Linkify text={m.body} mine={mine} /></p>}
                 </div>
                 <span className="mt-0.5 px-1 text-[11px] text-faint">
                   {m.pending ? "Enviando…" : timeFmt.format(new Date(m.created_at))}

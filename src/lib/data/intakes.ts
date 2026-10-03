@@ -96,3 +96,19 @@ export async function getTemplates(coachId: string) {
   const { data } = await supabase.from("coaches").select("message_templates").eq("id", coachId).maybeSingle();
   return normalizeTemplates(data?.message_templates);
 }
+
+/**
+ * Para el portal del cliente: link de su cuestionario si todavía no lo llenó.
+ * El cliente no lee la tabla de cuestionarios (solo el coach), por eso se consulta en el servidor.
+ */
+export async function pendingIntakeLink(clientId: string) {
+  const { createAdminClient } = await import("@/lib/supabase/admin");
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return null;
+  const admin = createAdminClient();
+  const [{ count }, { data }] = await Promise.all([
+    admin.from("intakes").select("id", { count: "exact", head: true }).eq("client_id", clientId).eq("kind", "full"),
+    admin.from("clients").select("intake_token").eq("id", clientId).maybeSingle(),
+  ]);
+  if ((count ?? 0) > 0 || !data?.intake_token) return null;
+  return `/cuestionario/${data.intake_token}`;
+}
