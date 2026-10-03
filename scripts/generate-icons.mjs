@@ -18,6 +18,6 @@ await png(ROUNDED, 48, "public/icons/favicon-48.png");
 console.log("íconos generados");
 
 // Ícono chiquito de la barra de notificaciones (Android lo pinta en un solo color: solo cuenta la silueta)
-const BADGE = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path fill="#fff" d="M50 6 L94 94 H72 L50 48 L28 94 H6 Z"/><path fill="#fff" d="M50 56 L66 86 H57 L50 72 L43 86 H34 Z"/></svg>');
+const BADGE = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path fill="#fff" d="M50 6 L94 94 H74 L50 46 L26 94 H6 Z"/><rect x="14" y="64" width="72" height="7" rx="2" fill="#fff"/><rect x="4" y="55" width="8" height="25" rx="2.5" fill="#fff"/><rect x="88" y="55" width="8" height="25" rx="2.5" fill="#fff"/><rect x="0" y="60" width="4" height="15" rx="1.5" fill="#fff"/><rect x="96" y="60" width="4" height="15" rx="1.5" fill="#fff"/></svg>');
 await sharp(BADGE, { density: 300 }).resize(96, 96).png({ compressionLevel: 9 }).toFile("public/icons/badge-96.png");
 console.log("badge generado");
