@@ -1,5 +1,6 @@
 "use client";
 
+import { WaLink } from "@/components/whatsapp/wa-link";
 import { useState } from "react";
 import { Check, Copy, MessageCircle } from "lucide-react";
 import type { InviteResult } from "@/lib/invite";
@@ -21,8 +22,6 @@ export function InviteLinkCard({ invite, firstName, phone }: { invite: InviteRes
     invite.kind === "invite"
       ? `Hola ${firstName}, bienvenido a Alpha Prime Nutrition. Entrá a este link para crear tu contraseña y ver tu plan: ${invite.link}`
       : `Hola ${firstName}, entrá a este link para crear una nueva contraseña en Alpha Prime Nutrition: ${invite.link}`;
-  const digits = (phone ?? "").replace(/\D/g, "");
-  const waUrl = `https://wa.me/${digits.length >= 8 ? (digits.length === 8 ? "503" + digits : digits) : ""}?text=${encodeURIComponent(message)}`;
 
   async function copy() {
     try {
@@ -50,9 +49,9 @@ export function InviteLinkCard({ invite, firstName, phone }: { invite: InviteRes
         className="h-10 w-full rounded-lg border border-line bg-graphite px-3 font-mono text-xs text-muted"
       />
       <div className="flex flex-wrap gap-2">
-        <a href={waUrl} target="_blank" rel="noopener noreferrer" className="inline-flex h-10 items-center gap-2 rounded-full bg-[#25d366] px-4 text-sm font-semibold text-ink">
+        <WaLink phone={phone} text={message} className="inline-flex h-10 items-center gap-2 rounded-full bg-[#25d366] px-4 text-sm font-semibold text-ink">
           <MessageCircle size={17} /> Enviar por WhatsApp
-        </a>
+        </WaLink>
         <Button type="button" variant="secondary" size="sm" className="h-10" onClick={copy}>
           {copied ? <Check size={16} /> : <Copy size={16} />} {copied ? "Copiado" : "Copiar link"}
         </Button>

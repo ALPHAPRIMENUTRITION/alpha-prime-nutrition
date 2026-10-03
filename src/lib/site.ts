@@ -24,3 +24,21 @@ export function waTo(phone: string | null | undefined, text: string) {
   const to = digits.length === 8 ? "503" + digits : digits;
   return `https://wa.me/${to.length >= 8 ? to : ""}?text=${encodeURIComponent(text)}`;
 }
+
+/** Número con código de país (8 dígitos = El Salvador). */
+export function waNumber(phone: string | null | undefined) {
+  const digits = (phone ?? "").replace(/\D/g, "");
+  return digits.length === 8 ? "503" + digits : digits;
+}
+
+/** Abre la app de WhatsApp directo (celular). Evita la página intermedia y el problema de los emojis. */
+export function waAppUrl(phone: string | null | undefined, text: string) {
+  const to = waNumber(phone);
+  return `whatsapp://send?${to.length >= 8 ? `phone=${to}&` : ""}text=${encodeURIComponent(text)}`;
+}
+
+/** Versión web (computadora). */
+export function waWebUrl(phone: string | null | undefined, text: string) {
+  const to = waNumber(phone);
+  return `https://api.whatsapp.com/send?${to.length >= 8 ? `phone=${to}&` : ""}text=${encodeURIComponent(text)}`;
+}

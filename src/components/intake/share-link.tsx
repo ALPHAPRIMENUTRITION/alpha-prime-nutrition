@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Check, Copy, MessageCircle } from "lucide-react";
 import { buttonClass } from "@/components/ui";
-import { waTo } from "@/lib/site";
+import { WaLink } from "@/components/whatsapp/wa-link";
 
 /** Copiar un link o mandarlo por WhatsApp. */
 export function ShareLink({ url, waText, phone, compact = false }: { url: string; waText: string; phone?: string | null; compact?: boolean }) {
@@ -21,9 +21,9 @@ export function ShareLink({ url, waText, phone, compact = false }: { url: string
     <div className="flex flex-col gap-2">
       {!compact && <code className="break-all rounded-lg border border-line bg-ink px-3 py-2 text-sm text-muted">{url}</code>}
       <div className="flex flex-wrap gap-2">
-        <a href={waTo(phone, `${waText}\n${url}`)} target="_blank" rel="noopener noreferrer" className={buttonClass("primary", "sm")}>
+        <WaLink phone={phone} text={`${waText}\n${url}`} className={buttonClass("primary", "sm")}>
           <MessageCircle size={16} /> Enviar por WhatsApp
-        </a>
+        </WaLink>
         <button type="button" onClick={copy} className={buttonClass("secondary", "sm")}>
           {copied ? <Check size={16} /> : <Copy size={16} />} {copied ? "Copiado" : "Copiar link"}
         </button>

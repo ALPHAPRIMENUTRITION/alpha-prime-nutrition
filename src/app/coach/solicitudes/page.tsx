@@ -2,12 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ClipboardCheck, ClipboardList, MessageCircle } from "lucide-react";
 import { requireRole } from "@/lib/auth";
-import { listIntakes, newFullIntakes, INTAKE_SERVICE_LABEL, INTAKE_STATUS_LABEL, type IntakeFilter } from "@/lib/data/intakes";
+import { getTemplates, listIntakes, newFullIntakes, INTAKE_SERVICE_LABEL, INTAKE_STATUS_LABEL, type IntakeFilter } from "@/lib/data/intakes";
 import { formatDate, relativeDays } from "@/lib/format";
 import { Badge, Card, EmptyState } from "@/components/ui";
 import { ShareLink } from "@/components/intake/share-link";
 import { publicEnv } from "@/lib/env";
 import { cn } from "@/lib/cn";
+import { fillTemplate, templatesFor, templateVars } from "@/lib/messages";
+import { WaLink } from "@/components/whatsapp/wa-link";
+import { markContactedAction } from "./actions";
 
 export const metadata: Metadata = { title: "Solicitudes" };
 
@@ -26,11 +29,11 @@ const SERVICES = [
 ];
 
 export default async function IntakesPage({ searchParams }: { searchParams: Promise<{ ver?: string; servicio?: string }> }) {
-  await requireRole("coach");
+  const coach = await requireRole("coach");
   const sp = await searchParams;
   const ver = (FILTERS.find((f) => f.id === sp.ver)?.id ?? "pendientes") as IntakeFilter;
   const servicio = SERVICES.find((s) => s.id === sp.servicio)?.id ?? "";
-  const [items, fulls] = await Promise.all([listIntakes(ver, servicio || undefined), newFullIntakes()]);
+  const [items, fulls, templates] = await Promise.all([listIntakes(ver, servicio || undefined), newFullIntakes(), getTemplates(coach.id)]);
   const url = `${publicEnv().NEXT_PUBLIC_SITE_URL}/empezar`;
   const href = (v: string, s: string) => {
     const q = new URLSearchParams();
@@ -122,15 +125,15 @@ export default async function IntakesPage({ searchParams }: { searchParams: Prom
                   </div>
                 </Link>
                 {i.phone && !["converted", "lost", "archived"].includes(i.status) && (
-                  <a
-                    href={`/coach/solicitudes/${i.id}/whatsapp`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={`Escribirle a ${i.first_name} por WhatsApp`}
+                  <WaLink
+                    phone={i.phone}
+                    text={fillTemplate(templatesFor(templates, i.service)[0]?.body ?? "", templateVars({ first_name: i.first_name, goal: i.goal, service: i.service, answers: i.answers }))}
+                    onOpen={markContactedAction.bind(null, i.id)}
+                    ariaLabel={`Escribirle a ${i.first_name} por WhatsApp`}
                     className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-ok/15 text-ok hover:bg-ok/25"
                   >
                     <MessageCircle size={18} />
-                  </a>
+                  </WaLink>
                 )}
               </li>
             ))}

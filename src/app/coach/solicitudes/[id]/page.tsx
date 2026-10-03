@@ -4,7 +4,8 @@ import { notFound } from "next/navigation";
 import { Archive, ArrowLeft, Check, MessageCircle, RotateCcw, Trash2, UserPlus, UserRound, X } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { getIntake, getTemplates, INTAKE_SERVICE_LABEL, INTAKE_STATUS_LABEL } from "@/lib/data/intakes";
-import { fillTemplate, templatesFor, templateVars } from "@/lib/messages";
+import { fillTemplate, templatesFor, templateVars, titleCase } from "@/lib/messages";
+import { WaLink } from "@/components/whatsapp/wa-link";
 import { QuickReplies } from "@/components/intake/quick-replies";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/format";
@@ -12,7 +13,7 @@ import { formatLb } from "@/lib/units";
 import { Badge, buttonClass } from "@/components/ui";
 import { ConfirmButton } from "@/components/confirm-button";
 import { IntakeAnswersView } from "@/components/intake/intake-answers";
-import { deleteIntakeAction, setIntakeStatusAction } from "../actions";
+import { deleteIntakeAction, markContactedAction, setIntakeStatusAction } from "../actions";
 
 export const metadata: Metadata = { title: "Solicitud" };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -77,9 +78,9 @@ export default async function IntakeDetailPage({ params }: { params: Promise<{ i
             </Link>
           )}
           {intake.phone && (
-            <a href={`/coach/solicitudes/${id}/whatsapp`} target="_blank" rel="noopener noreferrer" className={buttonClass("secondary", "sm")}>
+            <WaLink phone={intake.phone} text={`¡Hola ${titleCase(intake.first_name)}! `} onOpen={markContactedAction.bind(null, id)} className={buttonClass("secondary", "sm")}>
               <MessageCircle size={16} /> WhatsApp
-            </a>
+            </WaLink>
           )}
           {intake.kind === "short" && open && intake.status !== "contacted" && (
             <form action={setIntakeStatusAction.bind(null, id, "contacted")}>
@@ -116,6 +117,7 @@ export default async function IntakeDetailPage({ params }: { params: Promise<{ i
       {intake.phone && intake.kind === "short" && (
         <QuickReplies
           intakeId={intake.id}
+          phone={intake.phone}
           messages={templatesFor(await getTemplates(coach.id), intake.service).map((t) => ({
             idx: t.idx,
             title: t.title,
