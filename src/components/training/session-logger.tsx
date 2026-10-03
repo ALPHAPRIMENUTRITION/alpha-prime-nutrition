@@ -77,13 +77,13 @@ function CardioLog({ index, row, exercise, logs, prev, date, canLog }: { index: 
   }
 
   function unmark() {
-    if (!saved || !confirm(`¿Desmarcar ${name}? Se borra lo registrado.`)) return;
+    if (!saved) return;
+    setErr(null);
+    // Sin confirmación: se borra el registro pero quedan los datos escritos para volver a marcar.
     start(async () => {
       const res = await deleteSetAction(saved);
       if (!res.ok) return setErr(res.error ?? "No se pudo desmarcar.");
       setSaved(null);
-      setMin("");
-      setComment("");
     });
   }
 
@@ -255,15 +255,14 @@ function SetRow({ n, row, exerciseName, log, prevSet, suggestion, useRpe, date, 
 
   /** Desmarca una serie ya guardada (por si la marcó por error). */
   function unmark() {
-    if (!saved || !confirm(`¿Desmarcar la serie ${n}? Se borra lo registrado.`)) return;
+    if (!saved) return;
     setErr(null);
+    // Sin confirmación: se borra el registro pero quedan los datos escritos para volver a marcar.
     start(async () => {
       const res = await deleteSetAction(saved);
       if (!res.ok) return setErr(res.error ?? "No se pudo desmarcar.");
       setSaved(null);
       setDirty(false);
-      setV({ weight_kg: "", reps: "", effort: "", comment: "" });
-      setShowComment(false);
     });
   }
 
