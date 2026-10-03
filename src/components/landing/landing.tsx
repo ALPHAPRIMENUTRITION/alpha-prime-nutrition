@@ -1,13 +1,13 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
-import { ArrowRight, Bell, CalendarCheck, Dumbbell, LineChart, MessageCircle, Salad, Smartphone, Target, Utensils } from "lucide-react";
+import { ArrowRight, Bell, Globe, Video, CalendarCheck, Dumbbell, LineChart, MessageCircle, Salad, Smartphone, Target, Utensils } from "lucide-react";
 import { LogoHorizontal } from "@/components/brand/logo";
 import { SITE, TESTIMONIALS, whatsappUrl } from "@/lib/site";
 import { cn } from "@/lib/cn";
 
 const STEPS = [
   { title: "Me escribís", text: "Me contás tu objetivo, tu rutina diaria y lo que te gusta comer." },
-  { title: "Evaluación", text: "Tomamos tus medidas y armamos tu punto de partida." },
+  { title: "Evaluación online o presencial", text: "Por videollamada desde donde estés, o en persona con medidas. Tu plan es igual de personalizado." },
   { title: "Tu plan en la app", text: "Recibís tu plan de alimentación y tu rutina, hechos para vos." },
   { title: "Seguimiento semanal", text: "Cada semana mandás tu check-in y ajustamos lo necesario." },
 ];
@@ -99,6 +99,9 @@ export function Landing() {
                 Cómo funciona
               </a>
             </div>
+            <p className="mt-6 inline-flex items-center gap-2 rounded-full border border-red/40 bg-red/10 px-4 py-2 text-sm font-semibold">
+              <Globe size={16} className="text-red" /> Evaluación 100 % online · No necesitás venir en persona
+            </p>
           </div>
 
           <div className="relative mx-auto flex w-full max-w-md justify-center">
@@ -122,6 +125,19 @@ export function Landing() {
               </li>
             ))}
           </ol>
+
+          <div className="mt-8 grid gap-6 rounded-card border border-red/50 bg-gradient-to-br from-red/15 via-panel to-panel p-6 sm:p-8 lg:grid-cols-[auto_1fr] lg:items-center">
+            <span className="grid h-16 w-16 place-items-center rounded-2xl bg-red text-white">
+              <Video size={30} />
+            </span>
+            <div>
+              <h3 className="font-display text-4xl font-extrabold uppercase leading-none sm:text-5xl">¿No podés venir en persona? <span className="text-red">No hay problema.</span></h3>
+              <p className="mt-3 max-w-3xl text-muted">
+                La evaluación también se hace <strong className="text-fg">100 % online</strong>: por videollamada o WhatsApp me contás tu objetivo, tu día a día y lo que te gusta comer, me mandás tu peso y unas fotos, y armo tu plan a tu medida. Estés donde estés.
+                Si preferís venir, también podemos hacerla en persona y tomar tus medidas.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 

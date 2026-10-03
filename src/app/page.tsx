@@ -5,7 +5,7 @@ import { Landing } from "@/components/landing/landing";
 
 export const metadata: Metadata = {
   title: { absolute: "Alpha Prime Nutrition · Asesorías de alimentación y entrenamiento" },
-  description: "Plan de alimentación y rutina personalizados, con seguimiento semanal desde tu propia app.",
+  description: "Plan de alimentación y rutina personalizados, con evaluación online o presencial y seguimiento semanal desde tu propia app.",
   robots: { index: true, follow: true },
   alternates: { canonical: "/" },
 };
