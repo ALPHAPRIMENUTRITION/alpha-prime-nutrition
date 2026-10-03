@@ -1,6 +1,7 @@
 import { HeartPulse } from "lucide-react";
 import { INTAKE_SECTIONS, answerText, type IntakeAnswers } from "@/lib/intake";
 import { cn } from "@/lib/cn";
+import { IntakeFiles } from "@/components/intake/intake-files";
 
 /** Respuestas del cuestionario agrupadas por sección (vista del coach). */
 export function IntakeAnswersView({ answers }: { answers: IntakeAnswers }) {
@@ -26,7 +27,9 @@ export function IntakeAnswersView({ answers }: { answers: IntakeAnswers }) {
               {rows.map(({ q, v }) => (
                 <div key={q.key} className="grid gap-0.5 py-2.5 sm:grid-cols-[13rem_1fr] sm:gap-4">
                   <dt className="text-sm text-muted">{q.label}</dt>
-                  <dd className="whitespace-pre-wrap break-words text-sm font-medium">{v}</dd>
+                  <dd className="whitespace-pre-wrap break-words text-sm font-medium">
+                    {q.type === "file" && Array.isArray(answers[q.key]) ? <IntakeFiles paths={answers[q.key] as string[]} /> : v}
+                  </dd>
                 </div>
               ))}
             </dl>

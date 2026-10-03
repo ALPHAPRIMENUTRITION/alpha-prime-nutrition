@@ -4,7 +4,7 @@
 export type IntakeQuestion = {
   key: string;
   label: string;
-  type: "text" | "textarea" | "email" | "tel" | "date" | "number" | "radio" | "checkbox" | "select";
+  type: "text" | "textarea" | "email" | "tel" | "date" | "number" | "radio" | "checkbox" | "select" | "file";
   options?: readonly string[];
   required?: boolean;
   placeholder?: string;
@@ -172,6 +172,24 @@ export const INTAKE_SECTIONS: IntakeSection[] = [
       { key: "eats_out", label: "¿Cuántas veces comés fuera de casa?", type: "radio", options: ["Casi nunca", "1 a 2 veces por semana", "3 o más veces por semana"], wide: true },
       { key: "cooks", label: "¿Quién prepara tu comida?", type: "radio", options: ["Yo", "Alguien de mi casa", "Compro comida hecha"], wide: true },
       { key: "alcohol", label: "¿Tomás alcohol?", type: "radio", options: ["No", "Ocasionalmente", "Cada fin de semana", "Varias veces por semana"], wide: true },
+      { key: "prev_diets", label: "¿Has seguido alguna dieta o plan de alimentación antes?", type: "radio", options: ["Sí", "No"], wide: true },
+      {
+        key: "prev_diets_detail",
+        label: "¿Cuál fue? ¿Qué te funcionó y por qué la dejaste?",
+        type: "textarea",
+        placeholder: "Ej. dieta keto por 2 meses, bajé 10 lb pero me daba mucha hambre…",
+        max: 1000,
+        wide: true,
+        showIf: { key: "prev_diets", values: ["Sí"] },
+      },
+      {
+        key: "prev_diet_files",
+        label: "Si tenés tu plan anterior, subilo (opcional)",
+        type: "file",
+        hint: "Fotos o PDF, hasta 3 archivos.",
+        wide: true,
+        showIf: { key: "prev_diets", values: ["Sí"] },
+      },
       { key: "schedule", label: "Tu horario normal", type: "textarea", placeholder: "¿A qué hora te levantás, trabajás o estudiás, y te dormís?", max: 800, wide: true },
     ],
   },
@@ -230,6 +248,7 @@ export function parseIntake(
   const QUESTIONS = sectionsFor(kind).flatMap((s) => s.questions);
 
   for (const q of QUESTIONS) {
+    if (q.type === "file") continue;
     if (q.type === "checkbox") {
       const vals = fd.getAll(q.key).map(String).filter((v) => q.options?.includes(v));
       if (vals.length) answers[q.key] = [...new Set(vals)];

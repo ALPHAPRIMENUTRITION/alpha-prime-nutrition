@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { parseIntake, SERVICE_VALUE, SEX_VALUE, type IntakeAnswers } from "@/lib/intake";
 import { lbToKg } from "@/lib/units";
 
@@ -12,6 +13,30 @@ export type IntakeState = {
   answers?: IntakeAnswers;
   savedAt?: number;
 };
+
+const FILE_TYPES: Record<string, string> = { "image/webp": "webp", "image/jpeg": "jpg", "image/png": "png", "application/pdf": "pdf" };
+const MAX_FILE = 5 * 1024 * 1024;
+
+/** Sube fotos/PDF del plan anterior a la carpeta privada del cliente. */
+async function uploadIntakeFiles(token: string, files: File[]): Promise<{ paths: string[] } | { error: string }> {
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return { paths: [] };
+  if (files.length > 3) return { error: "Podés subir hasta 3 archivos." };
+  for (const f of files) {
+    if (!FILE_TYPES[f.type]) return { error: "Los archivos tienen que ser fotos o PDF." };
+    if (f.size > MAX_FILE) return { error: "Cada archivo puede pesar hasta 5 MB." };
+  }
+  const admin = createAdminClient();
+  const { data: client } = await admin.from("clients").select("id").eq("intake_token", token).maybeSingle();
+  if (!client) return { error: "Este link no es válido." };
+  const paths: string[] = [];
+  for (const f of files) {
+    const path = `${client.id}/${crypto.randomUUID()}.${FILE_TYPES[f.type]}`;
+    const { error } = await admin.storage.from("intake-files").upload(path, f, { contentType: f.type, upsert: false });
+    if (error) return { error: "No se pudieron subir los archivos. Probá de nuevo." };
+    paths.push(path);
+  }
+  return { paths };
+}
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -30,7 +55,7 @@ export async function submitIntakeAction(token: string | null, _prev: IntakeStat
 
   const a = parsed.answers;
   const s = (k: string) => (typeof a[k] === "string" ? (a[k] as string) : "");
-  const p = {
+  const p: { answers: IntakeAnswers } & Record<string, unknown> = {
     first_name: s("first_name"),
     last_name: s("last_name"),
     email: s("email"),
@@ -44,11 +69,21 @@ export async function submitIntakeAction(token: string | null, _prev: IntakeStat
     answers: a,
   };
 
+  // Archivos del plan anterior (solo en el cuestionario completo, con link de cliente)
+  if (token) {
+    const files = fd.getAll("prev_diet_files").filter((f): f is File => f instanceof File && f.size > 0);
+    if (files.length) {
+      const up = await uploadIntakeFiles(token, files);
+      if ("error" in up) return { error: up.error, answers: a, savedAt: Date.now() };
+      if (up.paths.length) p.answers = { ...a, prev_diet_files: up.paths };
+    }
+  }
+
   const supabase = await createClient();
   const { error } = await supabase.rpc("submit_intake", { p, p_token: token });
   if (error) {
     const msg = error.message.includes("Demasiados") ? "Recibimos varios envíos seguidos. Probá de nuevo en unos minutos." : error.message.includes("Link") ? "Este link no es válido." : "No se pudo enviar. Intentá de nuevo.";
     return { error: msg, answers: a, savedAt: Date.now() };
   }
-  return { ok: true, firstName: p.first_name };
+  return { ok: true, firstName: s("first_name") };
 }

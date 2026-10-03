@@ -1,7 +1,7 @@
 "use client";
 
-import { useActionState, useState } from "react";
-import { CheckCircle2, Lock, MessageCircle, Send } from "lucide-react";
+import { useActionState, useRef, useState } from "react";
+import { CheckCircle2, FileText, ImageIcon, Lock, MessageCircle, Send, Upload, X } from "lucide-react";
 import type { IntakeState } from "@/app/empezar/actions";
 import { isVisible, sectionsFor, type IntakeAnswers, type IntakeKind, type IntakeQuestion } from "@/lib/intake";
 import { cn } from "@/lib/cn";
@@ -23,6 +23,91 @@ function snapshot(form: HTMLFormElement): IntakeAnswers {
   return out;
 }
 
+const MAX_FILES = 3;
+const MAX_PDF = 4 * 1024 * 1024;
+
+/** Reduce fotos a 1600 px en WebP para que suban rápido (los PDF se mandan tal cual). */
+async function shrink(file: File): Promise<File> {
+  if (!file.type.startsWith("image/")) return file;
+  try {
+    const bmp = await createImageBitmap(file);
+    const scale = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+    const c = document.createElement("canvas");
+    c.width = Math.round(bmp.width * scale);
+    c.height = Math.round(bmp.height * scale);
+    c.getContext("2d")!.drawImage(bmp, 0, 0, c.width, c.height);
+    const blob = await new Promise<Blob | null>((r) => c.toBlob(r, "image/webp", 0.82));
+    return blob ? new File([blob], file.name.replace(/\.[^.]+$/, "") + ".webp", { type: "image/webp" }) : file;
+  } catch {
+    return file;
+  }
+}
+
+/** Selector de archivos: fotos o PDF, hasta 3. */
+function FilePicker({ name }: { name: string }) {
+  const ref = useRef<HTMLInputElement>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const sync = (list: File[]) => {
+    const dt = new DataTransfer();
+    list.forEach((f) => dt.items.add(f));
+    if (ref.current) ref.current.files = dt.files;
+    setFiles(list);
+  };
+
+  async function onPick(e: React.ChangeEvent<HTMLInputElement>) {
+    const picked = Array.from(e.target.files ?? []);
+    setMsg(null);
+    const ok = picked.filter((f) => f.type.startsWith("image/") || f.type === "application/pdf");
+    if (ok.length < picked.length) setMsg("Solo fotos o PDF.");
+    if (ok.some((f) => f.type === "application/pdf" && f.size > MAX_PDF)) setMsg("Cada PDF puede pesar hasta 4 MB.");
+    setBusy(true);
+    const shrunk = await Promise.all(ok.filter((f) => !(f.type === "application/pdf" && f.size > MAX_PDF)).map(shrink));
+    setBusy(false);
+    const next = [...files, ...shrunk].slice(0, MAX_FILES);
+    if (files.length + shrunk.length > MAX_FILES) setMsg(`Máximo ${MAX_FILES} archivos.`);
+    sync(next);
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <input ref={ref} type="file" name={name} multiple accept="image/*,application/pdf" className="hidden" onChange={onPick} />
+      {files.length > 0 && (
+        <ul className="flex flex-col gap-1.5">
+          {files.map((f, i) => (
+            <li key={f.name + i} className="flex items-center gap-2 rounded-xl border border-line bg-ink px-3 py-2 text-sm">
+              {f.type === "application/pdf" ? <FileText size={16} className="text-red" /> : <ImageIcon size={16} className="text-red" />}
+              <span className="min-w-0 flex-1 truncate">{f.name}</span>
+              <button type="button" aria-label={`Quitar ${f.name}`} onClick={() => sync(files.filter((_, k) => k !== i))} className="text-faint hover:text-bad">
+                <X size={16} />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {files.length < MAX_FILES && (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => {
+            if (ref.current) ref.current.value = "";
+            // Al reabrir el selector se pierde la selección anterior: se guarda y se vuelve a sumar
+            const keep = files;
+            ref.current?.addEventListener("cancel", () => sync(keep), { once: true });
+            ref.current?.click();
+          }}
+          className="flex h-12 items-center justify-center gap-2 rounded-xl border border-dashed border-line text-sm font-semibold text-muted hover:text-fg disabled:opacity-60"
+        >
+          <Upload size={17} /> {busy ? "Preparando…" : files.length ? "Agregar otro" : "Subir foto o PDF"}
+        </button>
+      )}
+      {msg && <span className="text-sm text-warn">{msg}</span>}
+    </div>
+  );
+}
+
 function Question({ q, value, error }: { q: IntakeQuestion; value: IntakeAnswers[string] | undefined; error?: string }) {
   const id = `q_${q.key}`;
   const label = (
@@ -34,6 +119,17 @@ function Question({ q, value, error }: { q: IntakeQuestion; value: IntakeAnswers
   const hint = q.hint && <span className="text-xs text-faint">{q.hint}</span>;
   const err = error && <span className="text-sm text-bad">{error}</span>;
   const str = typeof value === "string" ? value : "";
+
+  if (q.type === "file") {
+    return (
+      <div className={cn("flex flex-col gap-1.5", q.wide && "sm:col-span-2")}>
+        <span>{label}</span>
+        <FilePicker name={q.key} />
+        {hint}
+        {err}
+      </div>
+    );
+  }
 
   if (q.type === "radio" || q.type === "checkbox") {
     const list = Array.isArray(value) ? value : value ? [value] : [];
