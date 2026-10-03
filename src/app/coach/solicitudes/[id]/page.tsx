@@ -13,7 +13,8 @@ import { formatLb } from "@/lib/units";
 import { Badge, buttonClass } from "@/components/ui";
 import { ConfirmButton } from "@/components/confirm-button";
 import { IntakeAnswersView } from "@/components/intake/intake-answers";
-import { deleteIntakeAction, markContactedAction, setIntakeStatusAction } from "../actions";
+import { convertIntakeAction, deleteIntakeAction, markContactedAction, setIntakeStatusAction } from "../actions";
+import { GrantAccess } from "@/components/intake/grant-access";
 
 export const metadata: Metadata = { title: "Solicitud" };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -73,9 +74,12 @@ export default async function IntakeDetailPage({ params }: { params: Promise<{ i
               <UserRound size={16} /> Ver cliente
             </Link>
           ) : (
-            <Link href={`/coach/clientes/nuevo?solicitud=${intake.id}`} className={buttonClass("primary", "sm")}>
-              <UserPlus size={16} /> Crear cliente con estos datos
-            </Link>
+            <>
+              <GrantAccess action={convertIntakeAction.bind(null, intake.id)} firstName={titleCase(intake.first_name)} defaultEmail={intake.email} />
+              <Link href={`/coach/clientes/nuevo?solicitud=${intake.id}`} className={buttonClass("ghost", "sm")}>
+                <UserPlus size={16} /> Crear manualmente
+              </Link>
+            </>
           )}
           {intake.phone && (
             <WaLink phone={intake.phone} text={`¡Hola ${titleCase(intake.first_name)}! `} onOpen={markContactedAction.bind(null, id)} className={buttonClass("secondary", "sm")}>
