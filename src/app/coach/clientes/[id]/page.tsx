@@ -19,6 +19,7 @@ import { Avatar, Badge, Card, EmptyState, buttonClass } from "@/components/ui";
 import { ConfirmButton } from "@/components/confirm-button";
 import { AccessLinkButton } from "@/components/coach/access-link-button";
 import { clientIntakes, hasFullIntake } from "@/lib/data/intakes";
+import { titleCase } from "@/lib/messages";
 import { IntakeAnswersView } from "@/components/intake/intake-answers";
 import { ShareLink } from "@/components/intake/share-link";
 import { ClipboardList, MessageCircle } from "lucide-react";
@@ -171,7 +172,10 @@ export default async function ClientProfilePage({
         >
           <ClipboardList size={18} className="shrink-0 text-red" />
           <span className="flex-1">
-            <strong>Falta el cuestionario completo.</strong> Cuando {client.first_name} haya pagado, mandale su link.
+            <strong>Falta el cuestionario completo.</strong>{" "}
+            {o.membership_status === "active" || o.membership_status === "grace"
+              ? `Mandale su link a ${titleCase(client.first_name)} para armar su plan.`
+              : `Cuando ${titleCase(client.first_name)} haya pagado, mandale su link.`}
           </span>
           <span className="font-semibold text-red">Enviar</span>
         </Link>
