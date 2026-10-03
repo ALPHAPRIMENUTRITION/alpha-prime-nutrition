@@ -4,7 +4,7 @@
 //    de clientes en el teléfono. Sin conexión se muestra /offline.
 //  * Los archivos estáticos versionados de Next (/_next/static), íconos y
 //    fuentes se guardan en caché para que la app abra rápido.
-const VERSION = "v5";
+const VERSION = "v6";
 const STATIC_CACHE = `ap-static-${VERSION}`;
 const OFFLINE_URL = "/offline";
 const PRECACHE = [OFFLINE_URL, "/icons/icon-192.png", "/icons/icon-512.png", "/icons/apple-touch-icon.png"];
@@ -94,6 +94,7 @@ self.addEventListener("push", (event) => {
       tag: data.tag,
       data: { link: data.link || "/" },
       lang: "es",
+      vibrate: [120, 60, 120],
     }),
   );
 });

@@ -29,7 +29,7 @@ function keyBytes(base64: string) {
 }
 
 /** Suscribe este teléfono (si hace falta) y lo guarda a nombre del usuario que inició sesión. */
-async function subscribe() {
+export async function subscribe() {
   const reg = await navigator.serviceWorker.ready;
   let sub = await reg.pushManager.getSubscription();
   if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(VAPID_PUBLIC_KEY) });
