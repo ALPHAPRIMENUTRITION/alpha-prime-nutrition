@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Check, History, Lightbulb, MessageSquare, Plus, Trash2 } from "lucide-react";
+import { Check, History, Lightbulb, MessageSquare, Plus, Trash2, X } from "lucide-react";
 import { deleteSetAction, saveSetAction } from "@/app/portal/entrenamiento/actions";
 import { cardioLine, isCardio, LOAD_UNIT, prescriptionLine, suggestNext, type Exercise, type LogRow, type Suggestion, type WExercise } from "@/lib/training/plan";
 import { formatDate } from "@/lib/format";
@@ -76,6 +76,17 @@ function CardioLog({ index, row, exercise, logs, prev, date, canLog }: { index: 
     });
   }
 
+  function unmark() {
+    if (!saved || !confirm(`¿Desmarcar ${name}? Se borra lo registrado.`)) return;
+    start(async () => {
+      const res = await deleteSetAction(saved);
+      if (!res.ok) return setErr(res.error ?? "No se pudo desmarcar.");
+      setSaved(null);
+      setMin("");
+      setComment("");
+    });
+  }
+
   const input = "tnum h-10 w-full min-w-0 rounded-lg border border-line bg-ink px-2 text-center text-base text-fg placeholder:text-faint focus:border-faint focus:outline-none disabled:opacity-60";
   return (
     <article className="overflow-hidden rounded-card border border-line bg-panel">
@@ -106,9 +117,10 @@ function CardioLog({ index, row, exercise, logs, prev, date, canLog }: { index: 
           </label>
           <button
             type="button"
-            onClick={save}
-            disabled={!canLog || pending || isDone}
-            aria-label={`Guardar ${name}`}
+            onClick={isDone ? unmark : save}
+            disabled={!canLog || pending}
+            aria-label={isDone ? `Desmarcar ${name}` : `Guardar ${name}`}
+            title={isDone ? "Tocá para desmarcar" : "Marcar como hecho"}
             className={cn("grid h-10 w-10 place-items-center rounded-lg border", isDone ? "border-ok/40 bg-ok/15 text-ok" : "border-red bg-red text-white hover:bg-red-hover", "disabled:cursor-default")}
           >
             <Check size={18} strokeWidth={2.5} />
@@ -182,6 +194,7 @@ function StrengthLog({ index, row, exercise, logs, prev, date, canLog }: { index
             useRpe={useRpe}
             date={date}
             canLog={canLog}
+            onRemove={canLog && k + 1 === count && k + 1 > (row.sets ?? 3) ? () => setCount((c) => c - 1) : undefined}
           />
         ))}
       </div>
@@ -194,7 +207,7 @@ function StrengthLog({ index, row, exercise, logs, prev, date, canLog }: { index
   );
 }
 
-function SetRow({ n, row, exerciseName, log, prevSet, suggestion, useRpe, date, canLog }: { n: number; row: WExercise; exerciseName: string; log?: LogRow; prevSet?: LogRow; suggestion: Suggestion | null; useRpe: boolean; date: string; canLog: boolean }) {
+function SetRow({ n, row, exerciseName, log, prevSet, suggestion, useRpe, date, canLog, onRemove }: { n: number; row: WExercise; exerciseName: string; log?: LogRow; prevSet?: LogRow; suggestion: Suggestion | null; useRpe: boolean; date: string; canLog: boolean; onRemove?: () => void }) {
   const [v, setV] = useState({
     weight_kg: fmt(log?.weight_kg ?? null),
     reps: log?.reps != null ? String(log.reps) : "",
@@ -240,13 +253,33 @@ function SetRow({ n, row, exerciseName, log, prevSet, suggestion, useRpe, date, 
     });
   }
 
+  /** Desmarca una serie ya guardada (por si la marcó por error). */
+  function unmark() {
+    if (!saved || !confirm(`¿Desmarcar la serie ${n}? Se borra lo registrado.`)) return;
+    setErr(null);
+    start(async () => {
+      const res = await deleteSetAction(saved);
+      if (!res.ok) return setErr(res.error ?? "No se pudo desmarcar.");
+      setSaved(null);
+      setDirty(false);
+      setV({ weight_kg: "", reps: "", effort: "", comment: "" });
+      setShowComment(false);
+    });
+  }
+
   const input = "tnum h-10 w-full min-w-0 rounded-lg border border-line bg-ink px-2 text-center text-base text-fg placeholder:text-faint focus:border-faint focus:outline-none disabled:opacity-60";
   const isDone = Boolean(saved) && !dirty;
 
   return (
     <div className={cn("px-4 py-2", isDone && "bg-ok/5")}>
       <div className="grid grid-cols-[2rem_1fr_1fr_1fr_2.5rem_2.5rem] items-center gap-2">
-        <span className={cn("tnum text-sm font-bold", isDone ? "text-ok" : "text-muted")}>{n}</span>
+        {onRemove && !saved ? (
+          <button type="button" onClick={onRemove} aria-label={`Quitar serie extra ${n}`} title="Quitar esta serie" className="grid h-8 w-8 place-items-center rounded-lg text-faint hover:bg-panel-2 hover:text-bad">
+            <X size={15} />
+          </button>
+        ) : (
+          <span className={cn("tnum text-sm font-bold", isDone ? "text-ok" : "text-muted")}>{n}</span>
+        )}
         <input aria-label={`Lb serie ${n} de ${exerciseName}`} inputMode="decimal" value={v.weight_kg} onChange={set("weight_kg")} placeholder={phWeight || LOAD_UNIT} disabled={!canLog} className={input} />
         <input aria-label={`Repeticiones serie ${n} de ${exerciseName}`} inputMode="numeric" value={v.reps} onChange={set("reps")} placeholder={phReps || "reps"} disabled={!canLog} className={input} />
         <input aria-label={`${useRpe ? "RPE" : "RIR"} serie ${n} de ${exerciseName}`} inputMode="decimal" value={v.effort} onChange={set("effort")} placeholder={phEffort || "–"} disabled={!canLog} className={input} />
@@ -255,9 +288,10 @@ function SetRow({ n, row, exerciseName, log, prevSet, suggestion, useRpe, date, 
         </button>
         <button
           type="button"
-          onClick={save}
-          disabled={!canLog || pending || (isDone && !dirty)}
-          aria-label={`Guardar serie ${n} de ${exerciseName}`}
+          onClick={isDone ? unmark : save}
+          disabled={!canLog || pending}
+          aria-label={isDone ? `Desmarcar serie ${n} de ${exerciseName}` : `Guardar serie ${n} de ${exerciseName}`}
+          title={isDone ? "Tocá para desmarcar" : "Marcar como hecha"}
           className={cn("grid h-10 w-10 place-items-center rounded-lg border", isDone ? "border-ok/40 bg-ok/15 text-ok" : "border-red bg-red text-white hover:bg-red-hover", "disabled:cursor-default")}
         >
           <Check size={18} strokeWidth={2.5} />
