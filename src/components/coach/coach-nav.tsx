@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { LayoutDashboard, Users, ClipboardCheck, ClipboardList, CreditCard, Utensils } from "lucide-react";
+import { LayoutDashboard, Users, ClipboardCheck, ClipboardList, CreditCard, MessageCircle, Utensils } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 const ITEMS = [
@@ -11,6 +11,7 @@ const ITEMS = [
   { label: "Planes", href: "/coach/planes", match: (p: string) => ["/coach/planes", "/coach/alimentos", "/coach/rutinas", "/coach/ejercicios"].some((x) => p.startsWith(x)), icon: Utensils },
   { label: "Check-ins", href: "/coach/checkins", match: (p: string, f: string | null) => p.startsWith("/coach/checkins") || f === "checkin", icon: ClipboardCheck },
   { label: "Pagos", href: "/coach/pagos", match: (p: string) => p.startsWith("/coach/pagos"), icon: CreditCard },
+  { label: "Chat", href: "/coach/chat", match: (p: string) => p.startsWith("/coach/chat"), icon: MessageCircle, sideOnly: true },
   // En el celular se entra desde el panel (la barra de abajo tiene 5 espacios)
   { label: "Solicitudes", href: "/coach/solicitudes", match: (p: string) => p.startsWith("/coach/solicitudes"), icon: ClipboardList, sideOnly: true },
 ];

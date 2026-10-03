@@ -7,6 +7,8 @@ import { Logo, LogoHorizontal } from "@/components/brand/logo";
 import { CoachNav } from "@/components/coach/coach-nav";
 import { SignOutButton } from "@/components/sign-out-button";
 import { AvatarUpload } from "@/components/profile/avatar-upload";
+import { unreadChatCount } from "@/lib/data/chat";
+import { ChatLink } from "@/components/chat/chat-link";
 
 export default async function CoachLayout({ children }: { children: React.ReactNode }) {
   const profile = await requireRole("coach");
@@ -15,6 +17,7 @@ export default async function CoachLayout({ children }: { children: React.ReactN
     .from("notifications")
     .select("id", { count: "exact", head: true })
     .is("read_at", null);
+  const chatUnread = await unreadChatCount(profile.id);
 
   return (
     <div className="min-h-dvh lg:grid lg:grid-cols-[248px_1fr]">
@@ -49,12 +52,14 @@ export default async function CoachLayout({ children }: { children: React.ReactN
             <LogoHorizontal className="-ml-3 h-10" />
           </Link>
           <div className="flex items-center gap-1">
+            <ChatLink href="/coach/chat" unread={chatUnread} />
             <NotificationsLink unread={unread ?? 0} />
             <SignOutButton compact />
           </div>
         </header>
 
-        <div className="hidden justify-end px-8 pt-6 lg:flex">
+        <div className="hidden justify-end gap-1 px-8 pt-6 lg:flex">
+          <ChatLink href="/coach/chat" unread={chatUnread} />
           <NotificationsLink unread={unread ?? 0} />
         </div>
 

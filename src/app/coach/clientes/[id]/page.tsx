@@ -21,7 +21,7 @@ import { AccessLinkButton } from "@/components/coach/access-link-button";
 import { clientIntakes, hasFullIntake } from "@/lib/data/intakes";
 import { IntakeAnswersView } from "@/components/intake/intake-answers";
 import { ShareLink } from "@/components/intake/share-link";
-import { ClipboardList } from "lucide-react";
+import { ClipboardList, MessageCircle } from "lucide-react";
 import { publicEnv } from "@/lib/env";
 import { MeasurementForm } from "@/components/coach/measurement-form";
 import { NoteForm } from "@/components/coach/note-form";
@@ -129,6 +129,9 @@ export default async function ClientProfilePage({
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <Link href={`/coach/chat/${id}`} className={buttonClass("secondary", "sm")}>
+            <MessageCircle size={15} /> Mensaje
+          </Link>
           <Link href={`/coach/clientes/${id}/editar`} className={buttonClass("secondary", "sm")}>
             <Pencil size={15} /> Editar
           </Link>

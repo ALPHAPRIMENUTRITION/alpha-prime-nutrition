@@ -7,14 +7,16 @@ import { NotificationsBell } from "@/components/notifications/bell";
 import { createClient } from "@/lib/supabase/server";
 import { countUnread } from "@/lib/data/notifications";
 import { getPortalContext } from "@/lib/data/portal";
+import { unreadChatCount } from "@/lib/data/chat";
+import { ChatLink } from "@/components/chat/chat-link";
 
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
-  await requireRole("client");
+  const me = await requireRole("client");
   // Si ya pasó el día de check-in y no lo envió, crea el aviso (máximo 1 por semana; lo decide la base).
   const supabase = await createClient();
   // Ídem para el pago: aviso 3 días antes de la renovación (máximo 1 por ciclo).
   await Promise.all([supabase.rpc("checkin_reminder_tick"), supabase.rpc("payment_reminder_tick")]);
-  const [unread, ctx] = await Promise.all([countUnread(), getPortalContext()]);
+  const [unread, ctx, chatUnread] = await Promise.all([countUnread(), getPortalContext(), unreadChatCount(me.id)]);
 
   return (
     <div className="min-h-dvh">
@@ -24,6 +26,7 @@ export default async function PortalLayout({ children }: { children: React.React
             <LogoHorizontal className="-ml-3 h-10" />
           </Link>
           <div className="flex items-center gap-1">
+            <ChatLink href="/portal/chat" unread={chatUnread} />
             <NotificationsBell href="/portal/notificaciones" unread={unread} />
             <SignOutButton compact />
           </div>
