@@ -41,7 +41,7 @@ export async function POST(req: Request) {
   await Promise.all(
     n.subscriptions.map(async (s) => {
       try {
-        await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload, { TTL: 60 * 60 * 24, urgency: "normal" });
+        await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload, { TTL: 60 * 60 * 24, urgency: "high" });
         sent++;
       } catch (e) {
         const code = (e as { statusCode?: number }).statusCode;
