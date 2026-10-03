@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import type { IntakeAnswers } from "@/lib/intake";
+import { normalizeTemplates } from "@/lib/messages";
 
 export type IntakeStatus = "new" | "reviewed" | "contacted" | "converted" | "lost" | "archived";
 export type IntakeFilter = "pendientes" | "clientes" | "cerradas" | "todas";
@@ -88,3 +89,10 @@ export const INTAKE_STATUS_LABEL: Record<IntakeStatus, string> = {
   archived: "Archivada",
 };
 export const INTAKE_SERVICE_LABEL = { nutrition: "Alimentación", training: "Entrenamiento online", both: "Completo", personal: "Personal 1 a 1" } as const;
+
+/** Mensajes rápidos del coach (o los de fábrica si no los editó). */
+export async function getTemplates(coachId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase.from("coaches").select("message_templates").eq("id", coachId).maybeSingle();
+  return normalizeTemplates(data?.message_templates);
+}

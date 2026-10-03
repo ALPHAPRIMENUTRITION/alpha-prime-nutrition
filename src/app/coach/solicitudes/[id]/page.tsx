@@ -3,7 +3,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Archive, ArrowLeft, Check, MessageCircle, RotateCcw, Trash2, UserPlus, UserRound, X } from "lucide-react";
 import { requireRole } from "@/lib/auth";
-import { getIntake, INTAKE_SERVICE_LABEL, INTAKE_STATUS_LABEL } from "@/lib/data/intakes";
+import { getIntake, getTemplates, INTAKE_SERVICE_LABEL, INTAKE_STATUS_LABEL } from "@/lib/data/intakes";
+import { fillTemplate, templateVars } from "@/lib/messages";
+import { QuickReplies } from "@/components/intake/quick-replies";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/format";
 import { formatLb } from "@/lib/units";
@@ -25,7 +27,7 @@ function age(birth: string | null) {
 }
 
 export default async function IntakeDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireRole("coach");
+  const coach = await requireRole("coach");
   const { id } = await params;
   if (!UUID.test(id)) notFound();
   const intake = await getIntake(id);
@@ -110,6 +112,16 @@ export default async function IntakeDetailPage({ params }: { params: Promise<{ i
           <ConfirmButton action={deleteIntakeAction.bind(null, id)} label={<><Trash2 size={15} /> Eliminar</>} confirmText="¿Eliminar esta solicitud y sus respuestas?" confirmLabel="Sí, eliminar" />
         </div>
       </header>
+
+      {intake.phone && intake.kind === "short" && (
+        <QuickReplies
+          intakeId={intake.id}
+          messages={(await getTemplates(coach.id)).map((t) => ({
+            title: t.title,
+            text: fillTemplate(t.body, templateVars({ first_name: intake.first_name, goal: intake.goal, service: intake.service, answers: intake.answers })),
+          }))}
+        />
+      )}
 
       <IntakeAnswersView answers={intake.answers} />
     </div>

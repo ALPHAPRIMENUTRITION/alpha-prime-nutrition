@@ -43,7 +43,12 @@ export default async function IntakesPage({ searchParams }: { searchParams: Prom
     <div className="flex flex-col gap-6">
       <header>
         <p className="eyebrow">Personas interesadas</p>
-        <h1 className="mt-1 font-display text-4xl font-extrabold uppercase leading-none tracking-tight sm:text-5xl">Solicitudes</h1>
+        <div className="mt-1 flex flex-wrap items-end justify-between gap-3">
+          <h1 className="font-display text-4xl font-extrabold uppercase leading-none tracking-tight sm:text-5xl">Solicitudes</h1>
+          <Link href="/coach/mensajes" className="inline-flex items-center gap-1.5 rounded-full border border-line px-4 py-2 text-sm font-semibold hover:border-faint">
+            <MessageCircle size={16} /> Mensajes rápidos
+          </Link>
+        </div>
         <p className="mt-2 max-w-2xl text-muted">
           Lo que dejan en tu página: nombre, WhatsApp, objetivo y servicio. Escribiles, y cuando alguien pague, crealo como cliente y mandale el cuestionario completo desde su perfil.
         </p>
