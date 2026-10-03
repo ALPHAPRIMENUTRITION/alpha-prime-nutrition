@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { parseIntake, SERVICE_VALUE, SEX_VALUE, type IntakeAnswers } from "@/lib/intake";
+import { FILE_QUESTIONS, isVisible, parseIntake, SERVICE_VALUE, SEX_VALUE, type IntakeAnswers } from "@/lib/intake";
 import { lbToKg } from "@/lib/units";
 
 export type IntakeState = {
@@ -69,14 +69,19 @@ export async function submitIntakeAction(token: string | null, _prev: IntakeStat
     answers: a,
   };
 
-  // Archivos del plan anterior (solo en el cuestionario completo, con link de cliente)
+  // Fotos y archivos (solo en el cuestionario completo, con link de cliente)
   if (token) {
-    const files = fd.getAll("prev_diet_files").filter((f): f is File => f instanceof File && f.size > 0);
-    if (files.length) {
+    const extra: IntakeAnswers = {};
+    for (const q of FILE_QUESTIONS) {
+      if (!isVisible(q, a)) continue;
+      const files = fd.getAll(q.key).filter((f): f is File => f instanceof File && f.size > 0).slice(0, q.maxFiles ?? 3);
+      if (q.photosOnly && files.some((f) => !f.type.startsWith("image/"))) return { error: "Las fotos tienen que ser imágenes.", answers: a, savedAt: Date.now() };
+      if (!files.length) continue;
       const up = await uploadIntakeFiles(token, files);
       if ("error" in up) return { error: up.error, answers: a, savedAt: Date.now() };
-      if (up.paths.length) p.answers = { ...a, prev_diet_files: up.paths };
+      if (up.paths.length) extra[q.key] = up.paths;
     }
+    p.answers = { ...a, ...extra };
   }
 
   const supabase = await createClient();

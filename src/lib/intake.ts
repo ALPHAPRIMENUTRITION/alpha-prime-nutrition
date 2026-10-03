@@ -13,6 +13,9 @@ export type IntakeQuestion = {
   max?: number;
   /** Solo se muestra si otra respuesta tiene cierto valor */
   showIf?: { key: string; values: readonly string[] };
+  /** Archivos: solo fotos y cuántos como máximo */
+  photosOnly?: boolean;
+  maxFiles?: number;
   /** Ancho completo en pantallas grandes */
   wide?: boolean;
 };
@@ -69,6 +72,16 @@ export const INTAKE_SECTIONS: IntakeSection[] = [
       { key: "weight_lb", label: "Peso actual (lb)", type: "number", min: 50, max: 800, placeholder: "160" },
       { key: "height_cm", label: "Estatura (cm)", type: "number", min: 100, max: 230, placeholder: "170", hint: "Ej. 1.70 m = 170 cm" },
       { key: "target_weight_lb", label: "Peso que te gustaría tener (lb)", type: "number", min: 50, max: 800, hint: "Opcional" },
+    ],
+  },
+  {
+    id: "fotos",
+    title: "Tus fotos de inicio",
+    intro: "Opcional y confidencial: solo las ve tu coach. Me ayudan a ver tu punto de partida y comparar tu progreso. Con ropa deportiva, de cuerpo entero y con buena luz.",
+    questions: [
+      { key: "photo_front", label: "De frente", type: "file", photosOnly: true, maxFiles: 1 },
+      { key: "photo_side", label: "De lado", type: "file", photosOnly: true, maxFiles: 1 },
+      { key: "photo_back", label: "De espaldas", type: "file", photosOnly: true, maxFiles: 1 },
     ],
   },
   {
@@ -206,6 +219,7 @@ export const INTAKE_SECTIONS: IntakeSection[] = [
 ];
 
 export const ALL_QUESTIONS = INTAKE_SECTIONS.flatMap((s) => s.questions);
+export const FILE_QUESTIONS = ALL_QUESTIONS.filter((q) => q.type === "file");
 const Q = (key: string, over: Partial<IntakeQuestion> = {}) => ({ ...ALL_QUESTIONS.find((q) => q.key === key)!, ...over });
 
 /** Solicitud corta de la página pública: lo mínimo para escribirle y cotizar (1 minuto). */

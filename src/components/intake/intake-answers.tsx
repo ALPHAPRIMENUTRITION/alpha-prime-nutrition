@@ -28,7 +28,7 @@ export function IntakeAnswersView({ answers }: { answers: IntakeAnswers }) {
                 <div key={q.key} className="grid gap-0.5 py-2.5 sm:grid-cols-[13rem_1fr] sm:gap-4">
                   <dt className="text-sm text-muted">{q.label}</dt>
                   <dd className="whitespace-pre-wrap break-words text-sm font-medium">
-                    {q.type === "file" && Array.isArray(answers[q.key]) ? <IntakeFiles paths={answers[q.key] as string[]} /> : v}
+                    {q.type === "file" && Array.isArray(answers[q.key]) ? <IntakeFiles paths={answers[q.key] as string[]} large={q.photosOnly} /> : v}
                   </dd>
                 </div>
               ))}

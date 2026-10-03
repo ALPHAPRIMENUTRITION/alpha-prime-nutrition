@@ -2,7 +2,7 @@ import { FileText } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 
 /** Fotos/PDF que subió el cliente en el cuestionario (links privados de 1 hora). */
-export async function IntakeFiles({ paths }: { paths: string[] }) {
+export async function IntakeFiles({ paths, large = false }: { paths: string[]; large?: boolean }) {
   const supabase = await createClient();
   const { data } = await supabase.storage.from("intake-files").createSignedUrls(paths, 60 * 60);
   const files = (data ?? []).flatMap((d) => (d.signedUrl ? [{ path: d.path ?? "", signedUrl: d.signedUrl as string }] : []));
@@ -17,7 +17,7 @@ export async function IntakeFiles({ paths }: { paths: string[] }) {
         ) : (
           <a key={f.path} href={f.signedUrl} target="_blank" rel="noopener noreferrer" className="block overflow-hidden rounded-xl border border-line">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={f.signedUrl} alt={`Plan anterior ${i + 1}`} className="h-24 w-24 object-cover" />
+            <img src={f.signedUrl} alt={`Plan anterior ${i + 1}`} className={large ? "h-64 w-48 object-cover" : "h-24 w-24 object-cover"} />
           </a>
         ),
       )}

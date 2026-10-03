@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useRef, useState } from "react";
-import { CheckCircle2, FileText, ImageIcon, Lock, MessageCircle, Send, Upload, X } from "lucide-react";
+import { CheckCircle2, FileText, Lock, MessageCircle, Send, Upload, X } from "lucide-react";
 import type { IntakeState } from "@/app/empezar/actions";
 import { isVisible, sectionsFor, type IntakeAnswers, type IntakeKind, type IntakeQuestion } from "@/lib/intake";
 import { cn } from "@/lib/cn";
@@ -24,7 +24,7 @@ function snapshot(form: HTMLFormElement): IntakeAnswers {
 }
 
 const MAX_FILES = 3;
-const MAX_PDF = 4 * 1024 * 1024;
+const MAX_PDF = 1.5 * 1024 * 1024;
 
 /** Reduce fotos a 1600 px en WebP para que suban rápido (los PDF se mandan tal cual). */
 async function shrink(file: File): Promise<File> {
@@ -44,7 +44,7 @@ async function shrink(file: File): Promise<File> {
 }
 
 /** Selector de archivos: fotos o PDF, hasta 3. */
-function FilePicker({ name }: { name: string }) {
+function FilePicker({ name, photosOnly = false, max = MAX_FILES }: { name: string; photosOnly?: boolean; max?: number }) {
   const ref = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<File[]>([]);
   const [msg, setMsg] = useState<string | null>(null);
@@ -60,25 +60,30 @@ function FilePicker({ name }: { name: string }) {
   async function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     const picked = Array.from(e.target.files ?? []);
     setMsg(null);
-    const ok = picked.filter((f) => f.type.startsWith("image/") || f.type === "application/pdf");
-    if (ok.length < picked.length) setMsg("Solo fotos o PDF.");
-    if (ok.some((f) => f.type === "application/pdf" && f.size > MAX_PDF)) setMsg("Cada PDF puede pesar hasta 4 MB.");
+    const ok = picked.filter((f) => f.type.startsWith("image/") || (!photosOnly && f.type === "application/pdf"));
+    if (ok.length < picked.length) setMsg(photosOnly ? "Solo fotos." : "Solo fotos o PDF.");
+    if (ok.some((f) => f.type === "application/pdf" && f.size > MAX_PDF)) setMsg("Cada PDF puede pesar hasta 1.5 MB. Si es más pesado, subí una foto de cada página.");
     setBusy(true);
     const shrunk = await Promise.all(ok.filter((f) => !(f.type === "application/pdf" && f.size > MAX_PDF)).map(shrink));
     setBusy(false);
-    const next = [...files, ...shrunk].slice(0, MAX_FILES);
-    if (files.length + shrunk.length > MAX_FILES) setMsg(`Máximo ${MAX_FILES} archivos.`);
+    const next = max === 1 ? shrunk.slice(0, 1) : [...files, ...shrunk].slice(0, max);
+    if (max > 1 && files.length + shrunk.length > max) setMsg(`Máximo ${max} archivos.`);
     sync(next);
   }
 
   return (
     <div className="flex flex-col gap-2">
-      <input ref={ref} type="file" name={name} multiple accept="image/*,application/pdf" className="hidden" onChange={onPick} />
+      <input ref={ref} type="file" name={name} multiple={max > 1} accept={photosOnly ? "image/*" : "image/*,application/pdf"} className="hidden" onChange={onPick} />
       {files.length > 0 && (
         <ul className="flex flex-col gap-1.5">
           {files.map((f, i) => (
             <li key={f.name + i} className="flex items-center gap-2 rounded-xl border border-line bg-ink px-3 py-2 text-sm">
-              {f.type === "application/pdf" ? <FileText size={16} className="text-red" /> : <ImageIcon size={16} className="text-red" />}
+              {f.type === "application/pdf" ? (
+                <FileText size={16} className="text-red" />
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={URL.createObjectURL(f)} alt="" className="h-12 w-12 rounded-lg object-cover" />
+              )}
               <span className="min-w-0 flex-1 truncate">{f.name}</span>
               <button type="button" aria-label={`Quitar ${f.name}`} onClick={() => sync(files.filter((_, k) => k !== i))} className="text-faint hover:text-bad">
                 <X size={16} />
@@ -87,7 +92,7 @@ function FilePicker({ name }: { name: string }) {
           ))}
         </ul>
       )}
-      {files.length < MAX_FILES && (
+      {files.length < max && (
         <button
           type="button"
           disabled={busy}
@@ -100,7 +105,7 @@ function FilePicker({ name }: { name: string }) {
           }}
           className="flex h-12 items-center justify-center gap-2 rounded-xl border border-dashed border-line text-sm font-semibold text-muted hover:text-fg disabled:opacity-60"
         >
-          <Upload size={17} /> {busy ? "Preparando…" : files.length ? "Agregar otro" : "Subir foto o PDF"}
+          <Upload size={17} /> {busy ? "Preparando…" : files.length ? "Agregar otro" : photosOnly ? "Subir foto" : "Subir foto o PDF"}
         </button>
       )}
       {msg && <span className="text-sm text-warn">{msg}</span>}
@@ -124,7 +129,7 @@ function Question({ q, value, error }: { q: IntakeQuestion; value: IntakeAnswers
     return (
       <div className={cn("flex flex-col gap-1.5", q.wide && "sm:col-span-2")}>
         <span>{label}</span>
-        <FilePicker name={q.key} />
+        <FilePicker name={q.key} photosOnly={q.photosOnly} max={q.maxFiles ?? MAX_FILES} />
         {hint}
         {err}
       </div>
