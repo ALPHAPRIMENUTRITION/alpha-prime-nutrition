@@ -6,7 +6,7 @@ import { SITE, TESTIMONIALS, whatsappUrl } from "@/lib/site";
 import { cn } from "@/lib/cn";
 
 const STEPS = [
-  { title: "Llenás el cuestionario", text: "En 5 minutos me contás tu objetivo, tus gustos de comida y tu rutina." },
+  { title: "Me dejás tu solicitud", text: "En 1 minuto me contás tu objetivo y qué servicio te interesa. Te escribo por WhatsApp." },
   { title: "Evaluación online o presencial", text: "Por videollamada desde donde estés, o en persona con medidas. Tu plan es igual de personalizado." },
   { title: "Tu plan en la app", text: "Recibís tu plan de alimentación y tu rutina, hechos para vos." },
   { title: "Seguimiento semanal", text: "Cada semana mandás tu check-in y ajustamos lo necesario." },
@@ -253,10 +253,10 @@ export function Landing() {
           <h2 className="font-display text-5xl font-extrabold uppercase leading-none sm:text-7xl">
             ¿Listo para <span className="text-red">empezar?</span>
           </h2>
-          <p className="mt-5 text-lg text-muted">Llená el cuestionario (5 minutos) o escribime, y armamos juntos tu plan.</p>
+          <p className="mt-5 text-lg text-muted">Dejá tu solicitud (1 minuto) o escribime, y armamos juntos tu plan.</p>
           <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
             <Link href="/empezar" className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-red px-6 text-base font-semibold text-white transition-colors hover:bg-red-hover">
-              <ClipboardList size={19} /> Llenar el cuestionario
+              <ClipboardList size={19} /> Dejar mi solicitud
             </Link>
             <Cta className="border border-line bg-transparent hover:bg-panel-2" label="Escribime por WhatsApp" />
           </div>

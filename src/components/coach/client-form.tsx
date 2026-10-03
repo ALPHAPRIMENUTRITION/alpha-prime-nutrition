@@ -5,6 +5,7 @@ import { useActionState } from "react";
 import type { FormState } from "@/app/coach/clientes/actions";
 import { Button, Field, Input, Select, Textarea, buttonClass } from "@/components/ui";
 import { InviteLinkCard } from "@/components/coach/invite-link-card";
+import { ShareLink } from "@/components/intake/share-link";
 import { SERVICE_OPTIONS, type ServiceKey } from "@/lib/services";
 
 export interface ClientFormDefaults {
@@ -60,6 +61,17 @@ export function ClientForm({
           </p>
         </div>
         {state.invite && <InviteLinkCard invite={state.invite} firstName={state.firstName || "tu cliente"} phone={state.phone} />}
+        {state.intakeUrl && (
+          <div className="flex flex-col gap-3 rounded-card border border-line bg-panel p-5">
+            <p className="eyebrow">Cuestionario completo</p>
+            <p className="text-sm text-muted">Cuando haya pagado, mandale este link: salud, alimentación, entreno y estilo de vida. Sus respuestas quedan en su perfil.</p>
+            <ShareLink
+              url={state.intakeUrl}
+              phone={state.phone}
+              waText={`¡Hola ${state.firstName || ""}! Bienvenido a Alpha Prime 💪 Para armar tu plan a tu medida, llená este cuestionario (te toma unos 5 minutos):`}
+            />
+          </div>
+        )}
         <div className="flex flex-wrap gap-2">
           <Link href={`/coach/clientes/${state.clientId}${state.invite ? "" : "?tab=nutricion"}`} className={buttonClass("primary")}>
             {state.invite ? "Ver perfil" : "Armar su plan"}

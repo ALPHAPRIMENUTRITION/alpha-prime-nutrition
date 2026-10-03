@@ -188,6 +188,28 @@ export const INTAKE_SECTIONS: IntakeSection[] = [
 ];
 
 export const ALL_QUESTIONS = INTAKE_SECTIONS.flatMap((s) => s.questions);
+const Q = (key: string, over: Partial<IntakeQuestion> = {}) => ({ ...ALL_QUESTIONS.find((q) => q.key === key)!, ...over });
+
+/** Solicitud corta de la página pública: lo mínimo para escribirle y cotizar (1 minuto). */
+export const SHORT_SECTIONS: IntakeSection[] = [
+  {
+    id: "solicitud",
+    title: "Tu solicitud",
+    questions: [
+      Q("first_name"),
+      Q("last_name"),
+      Q("phone", { wide: true }),
+      Q("goal"),
+      Q("service"),
+      Q("evaluation"),
+      Q("training_time"),
+      Q("goal_detail", { label: "¿Algo que quieras contarme? (opcional)", placeholder: "Ej. quiero bajar 15 lb antes de diciembre", max: 500 }),
+    ],
+  },
+];
+
+export type IntakeKind = "short" | "full";
+export const sectionsFor = (kind: IntakeKind) => (kind === "short" ? SHORT_SECTIONS : INTAKE_SECTIONS);
 
 /** Respuestas tal como se guardan: texto o lista de opciones. */
 export type IntakeAnswers = Record<string, string | string[]>;
@@ -199,11 +221,15 @@ export function isVisible(q: IntakeQuestion, a: IntakeAnswers) {
 }
 
 /** Valida y limpia lo enviado. Devuelve las respuestas o los errores por campo. */
-export function parseIntake(fd: FormData): { ok: true; answers: IntakeAnswers } | { ok: false; errors: Record<string, string>; answers: IntakeAnswers } {
+export function parseIntake(
+  fd: FormData,
+  kind: IntakeKind = "full",
+): { ok: true; answers: IntakeAnswers } | { ok: false; errors: Record<string, string>; answers: IntakeAnswers } {
   const answers: IntakeAnswers = {};
   const errors: Record<string, string> = {};
+  const QUESTIONS = sectionsFor(kind).flatMap((s) => s.questions);
 
-  for (const q of ALL_QUESTIONS) {
+  for (const q of QUESTIONS) {
     if (q.type === "checkbox") {
       const vals = fd.getAll(q.key).map(String).filter((v) => q.options?.includes(v));
       if (vals.length) answers[q.key] = [...new Set(vals)];
@@ -214,7 +240,7 @@ export function parseIntake(fd: FormData): { ok: true; answers: IntakeAnswers } 
     answers[q.key] = raw;
   }
 
-  for (const q of ALL_QUESTIONS) {
+  for (const q of QUESTIONS) {
     const v = answers[q.key];
     if (!isVisible(q, answers)) {
       delete answers[q.key];

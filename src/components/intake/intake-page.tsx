@@ -29,16 +29,17 @@ export function IntakePage({
         </div>
       </header>
       <main className="mx-auto max-w-3xl px-4 pb-16 pt-8 sm:px-6">
-        <p className="eyebrow text-red">Cuestionario inicial</p>
+        <p className="eyebrow text-red">{greetingName ? "Cuestionario inicial" : "Solicitud"}</p>
         <h1 className="mt-2 font-display text-5xl font-extrabold uppercase leading-[0.95] sm:text-6xl">
           {greetingName ? <>Hola, <span className="text-red">{greetingName}</span></> : <>Empecemos <span className="text-red">tu plan</span></>}
         </h1>
         <p className="mt-4 text-lg text-muted">
-          Contame de vos: tus gustos, tu rutina y tu objetivo. Con esto armo un plan hecho a tu medida.
-          {!greetingName && " La evaluación puede ser 100 % online o presencial."}
+          {greetingName
+            ? "Contame de vos: tus gustos, tu rutina, tu salud y tu objetivo. Con esto armo tu plan a tu medida."
+            : "Dejame tus datos y lo que buscás. Te escribo por WhatsApp con los detalles. La evaluación puede ser 100 % online o presencial."}
         </p>
         <div className="mt-8">
-          <IntakeForm action={action} greetingName={greetingName} whatsappHref={whatsappHref} />
+          <IntakeForm action={action} greetingName={greetingName} whatsappHref={whatsappHref} kind={greetingName ? "full" : "short"} />
         </div>
       </main>
     </div>

@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Archive, ArrowLeft, MessageCircle, RotateCcw, Trash2, UserPlus, UserRound } from "lucide-react";
+import { Archive, ArrowLeft, Check, MessageCircle, RotateCcw, Trash2, UserPlus, UserRound, X } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { getIntake, INTAKE_SERVICE_LABEL, INTAKE_STATUS_LABEL } from "@/lib/data/intakes";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate } from "@/lib/format";
 import { formatLb } from "@/lib/units";
-import { waTo } from "@/lib/site";
 import { Badge, buttonClass } from "@/components/ui";
 import { ConfirmButton } from "@/components/confirm-button";
 import { IntakeAnswersView } from "@/components/intake/intake-answers";
@@ -40,6 +39,7 @@ export default async function IntakeDetailPage({ params }: { params: Promise<{ i
   }
 
   const name = `${intake.first_name} ${intake.last_name}`.trim();
+  const open = ["new", "reviewed", "contacted"].includes(intake.status);
   const years = age(intake.birth_date);
   const facts = [
     years != null ? `${years} años` : null,
@@ -56,7 +56,8 @@ export default async function IntakeDetailPage({ params }: { params: Promise<{ i
 
       <header className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
-          <Badge tone={intake.status === "converted" ? "ok" : "neutral"}>{INTAKE_STATUS_LABEL[intake.status]}</Badge>
+          <Badge tone={intake.status === "converted" ? "ok" : intake.status === "contacted" ? "warn" : "neutral"}>{INTAKE_STATUS_LABEL[intake.status]}</Badge>
+          <Badge tone="neutral">{intake.kind === "full" ? "Cuestionario completo" : "Solicitud"}</Badge>
           {intake.service && <Badge tone="neutral">{INTAKE_SERVICE_LABEL[intake.service]}</Badge>}
           <span className="text-sm text-faint">{formatDate(intake.created_at)}</span>
         </div>
@@ -74,16 +75,37 @@ export default async function IntakeDetailPage({ params }: { params: Promise<{ i
             </Link>
           )}
           {intake.phone && (
-            <a href={waTo(intake.phone, `¡Hola ${intake.first_name}! Recibí tu cuestionario. ¿Cuándo te queda bien para tu evaluación?`)} target="_blank" rel="noopener noreferrer" className={buttonClass("secondary", "sm")}>
+            <a href={`/coach/solicitudes/${id}/whatsapp`} target="_blank" rel="noopener noreferrer" className={buttonClass("secondary", "sm")}>
               <MessageCircle size={16} /> WhatsApp
             </a>
           )}
-          {intake.status === "archived" ? (
-            <ConfirmButton action={setIntakeStatusAction.bind(null, id, "reviewed")} label={<><RotateCcw size={15} /> Desarchivar</>} confirmText="¿Volver a pendientes?" confirmLabel="Sí" tone="neutral" />
-          ) : (
-            intake.status !== "converted" && (
-              <ConfirmButton action={setIntakeStatusAction.bind(null, id, "archived")} label={<><Archive size={15} /> Archivar</>} confirmText="Se quita de pendientes." confirmLabel="Archivar" tone="neutral" />
-            )
+          {intake.kind === "short" && open && intake.status !== "contacted" && (
+            <form action={setIntakeStatusAction.bind(null, id, "contacted")}>
+              <button className={buttonClass("secondary", "sm")}>
+                <Check size={16} /> Ya le escribí
+              </button>
+            </form>
+          )}
+          {intake.kind === "short" && open && (
+            <form action={setIntakeStatusAction.bind(null, id, "lost")}>
+              <button className={buttonClass("secondary", "sm")}>
+                <X size={16} /> No se concretó
+              </button>
+            </form>
+          )}
+          {intake.kind === "short" && open && (
+            <form action={setIntakeStatusAction.bind(null, id, "archived")}>
+              <button className={buttonClass("ghost", "sm")}>
+                <Archive size={16} /> Archivar
+              </button>
+            </form>
+          )}
+          {(intake.status === "lost" || intake.status === "archived") && (
+            <form action={setIntakeStatusAction.bind(null, id, "contacted")}>
+              <button className={buttonClass("secondary", "sm")}>
+                <RotateCcw size={16} /> Volver a pendientes
+              </button>
+            </form>
           )}
           <ConfirmButton action={deleteIntakeAction.bind(null, id)} label={<><Trash2 size={15} /> Eliminar</>} confirmText="¿Eliminar esta solicitud y sus respuestas?" confirmLabel="Sí, eliminar" />
         </div>

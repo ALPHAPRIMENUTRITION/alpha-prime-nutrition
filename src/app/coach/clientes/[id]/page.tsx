@@ -18,9 +18,10 @@ import { cn } from "@/lib/cn";
 import { Avatar, Badge, Card, EmptyState, buttonClass } from "@/components/ui";
 import { ConfirmButton } from "@/components/confirm-button";
 import { AccessLinkButton } from "@/components/coach/access-link-button";
-import { latestClientIntake } from "@/lib/data/intakes";
+import { clientIntakes, hasFullIntake } from "@/lib/data/intakes";
 import { IntakeAnswersView } from "@/components/intake/intake-answers";
 import { ShareLink } from "@/components/intake/share-link";
+import { ClipboardList } from "lucide-react";
 import { publicEnv } from "@/lib/env";
 import { MeasurementForm } from "@/components/coach/measurement-form";
 import { NoteForm } from "@/components/coach/note-form";
@@ -158,6 +159,20 @@ export default async function ClientProfilePage({
           )}
         </div>
       </header>
+
+      {tab !== "cuestionario" && !(await hasFullIntake(id)) && (
+        <Link
+          href={`/coach/clientes/${id}?tab=cuestionario`}
+          scroll={false}
+          className="flex items-center gap-3 rounded-xl border border-red/40 bg-red/10 px-4 py-3 text-sm hover:bg-red/15"
+        >
+          <ClipboardList size={18} className="shrink-0 text-red" />
+          <span className="flex-1">
+            <strong>Falta el cuestionario completo.</strong> Cuando {client.first_name} haya pagado, mandale su link.
+          </span>
+          <span className="font-semibold text-red">Enviar</span>
+        </Link>
+      )}
 
       <nav aria-label="Secciones del perfil" className="-mx-4 overflow-x-auto border-b border-line px-4 lg:mx-0 lg:px-0">
         <ul className="flex gap-1">
@@ -580,30 +595,40 @@ async function History({ id }: { id: string }) {
 
 async function Questionnaire({ id, firstName, phone }: { id: string; firstName: string; phone: string | null }) {
   const supabase = await createClient();
-  const [{ data: row }, intake] = await Promise.all([
+  const [{ data: row }, { full, short }] = await Promise.all([
     supabase.from("clients").select("intake_token").eq("id", id).maybeSingle(),
-    latestClientIntake(id),
+    clientIntakes(id),
   ]);
   const url = row?.intake_token ? `${publicEnv().NEXT_PUBLIC_SITE_URL}/cuestionario/${row.intake_token}` : null;
 
   return (
     <div className="flex flex-col gap-5">
       {url && (
-        <Card className="flex flex-col gap-3 p-5">
-          <h2 className="eyebrow">{intake ? "Volver a enviar el cuestionario" : "Pedile que llene el cuestionario"}</h2>
-          <p className="text-sm text-muted">Es su link personal: lo que responda queda guardado aquí y te llega una notificación.</p>
-          <ShareLink url={url} phone={phone} waText={`¡Hola ${firstName}! Para armar tu plan a tu medida, llená este cuestionario (te toma unos 5 minutos):`} />
+        <Card className={cn("flex flex-col gap-3 p-5", !full && "border-red/40")}>
+          <h2 className="eyebrow">{full ? "Volver a enviar el cuestionario completo" : "Mandale el cuestionario completo"}</h2>
+          <p className="text-sm text-muted">
+            Su link personal: salud, alimentación, entrenamiento y estilo de vida. Lo que responda queda guardado aquí y te llega una notificación.
+          </p>
+          <ShareLink url={url} phone={phone} waText={`¡Hola ${firstName}! Bienvenido a Alpha Prime 💪 Para armar tu plan a tu medida, llená este cuestionario (te toma unos 5 minutos):`} />
         </Card>
       )}
-      {intake ? (
+      {full ? (
         <>
-          <p className="text-sm text-muted">Respondido el {formatDate(intake.created_at)}</p>
-          <IntakeAnswersView answers={intake.answers} />
+          <p className="text-sm text-muted">Cuestionario completo respondido el {formatDate(full.created_at)}</p>
+          <IntakeAnswersView answers={full.answers} />
         </>
       ) : (
         <Card>
-          <EmptyState title="Sin cuestionario" description="Todavía no lo llenó. Mandale su link y sus respuestas aparecen aquí." />
+          <EmptyState title="Sin cuestionario completo" description="Todavía no lo llenó. Mandale su link y sus respuestas aparecen aquí." />
         </Card>
+      )}
+      {short && (
+        <details className="rounded-card border border-line bg-panel p-5">
+          <summary className="cursor-pointer text-sm font-semibold">Solicitud inicial ({formatDate(short.created_at)})</summary>
+          <div className="mt-4">
+            <IntakeAnswersView answers={short.answers} />
+          </div>
+        </details>
       )}
     </div>
   );

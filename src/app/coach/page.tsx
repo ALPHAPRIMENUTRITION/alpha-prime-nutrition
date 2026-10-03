@@ -61,16 +61,22 @@ export default async function CoachDashboard({ searchParams }: { searchParams: P
 
       <Link
         href="/coach/solicitudes"
-        className={`flex items-center gap-3 rounded-card border p-4 transition-colors hover:bg-panel-2 ${newIntakes ? "border-red/50 bg-red/10" : "border-line bg-panel"}`}
+        className={`flex items-center gap-3 rounded-card border p-4 transition-colors hover:bg-panel-2 ${newIntakes.short + newIntakes.full ? "border-red/50 bg-red/10" : "border-line bg-panel"}`}
       >
-        <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${newIntakes ? "bg-red text-white" : "bg-panel-2 text-muted"}`}>
+        <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl ${newIntakes.short + newIntakes.full ? "bg-red text-white" : "bg-panel-2 text-muted"}`}>
           <ClipboardList size={20} />
         </span>
         <span className="min-w-0 flex-1">
           <span className="block font-semibold">
-            {newIntakes ? `${newIntakes} ${newIntakes === 1 ? "solicitud nueva" : "solicitudes nuevas"}` : "Cuestionario inicial"}
+            {newIntakes.short ? `${newIntakes.short} ${newIntakes.short === 1 ? "solicitud nueva" : "solicitudes nuevas"}` : "Solicitudes"}
           </span>
-          <span className="block text-sm text-muted">{newIntakes ? "Personas que llenaron el cuestionario" : "Solicitudes y tu link para compartir"}</span>
+          <span className="block text-sm text-muted">
+            {newIntakes.full
+              ? `${newIntakes.full} ${newIntakes.full === 1 ? "cuestionario completo nuevo" : "cuestionarios completos nuevos"}`
+              : newIntakes.short
+                ? "Personas interesadas desde tu página"
+                : "Interesados y tu link para compartir"}
+          </span>
         </span>
         <ChevronRight size={18} className="text-faint" />
       </Link>

@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-export async function setIntakeStatusAction(id: string, status: "new" | "reviewed" | "archived") {
+export async function setIntakeStatusAction(id: string, status: "reviewed" | "contacted" | "lost" | "archived") {
   await requireRole("coach");
   if (!UUID.test(id)) return;
   const supabase = await createClient();

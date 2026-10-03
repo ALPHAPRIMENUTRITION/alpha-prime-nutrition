@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAccessLink, type InviteResult } from "@/lib/invite";
 import { serviceFlags } from "@/lib/services";
 import { lbToKg } from "@/lib/units";
+import { publicEnv } from "@/lib/env";
 import {
   clientSchema,
   fieldErrors,
@@ -27,6 +28,8 @@ export type FormState = {
   savedAt?: number;
   firstName?: string;
   phone?: string | null;
+  /** Link personal del cuestionario completo */
+  intakeUrl?: string;
   /** Valores enviados, para no perderlos si hay un error */
   values?: Record<string, string>;
 };
@@ -70,7 +73,7 @@ export async function createClientAction(_prev: FormState, fd: FormData): Promis
       renewal_date: d.renewal_date ?? null,
       ...serviceFlags(d.service),
     })
-    .select("id")
+    .select("id, intake_token")
     .single();
 
   if (error || !client) {
@@ -105,7 +108,8 @@ export async function createClientAction(_prev: FormState, fd: FormData): Promis
   }
 
   revalidatePath("/coach");
-  return { ok: true, clientId, invite, firstName: d.first_name, phone: d.phone ?? null };
+  const intakeUrl = client.intake_token ? `${publicEnv().NEXT_PUBLIC_SITE_URL}/cuestionario/${client.intake_token}` : undefined;
+  return { ok: true, clientId, invite, firstName: d.first_name, phone: d.phone ?? null, intakeUrl };
 }
 
 export async function updateClientAction(clientId: string, _prev: FormState, fd: FormData): Promise<FormState> {

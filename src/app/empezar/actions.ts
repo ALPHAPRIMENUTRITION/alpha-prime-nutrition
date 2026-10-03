@@ -21,7 +21,7 @@ export async function submitIntakeAction(token: string | null, _prev: IntakeStat
   if (String(fd.get("website") ?? "")) return { ok: true, firstName: "" };
   if (token && !UUID.test(token)) return { error: "Este link no es válido." };
 
-  const parsed = parseIntake(fd);
+  const parsed = parseIntake(fd, token ? "full" : "short");
   const errors = parsed.ok ? {} : { ...parsed.errors };
   if (!fd.get("consent")) errors.consent = "Necesitamos tu autorización para usar estos datos.";
   if (Object.keys(errors).length) {

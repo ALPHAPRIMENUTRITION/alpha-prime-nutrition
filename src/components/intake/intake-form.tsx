@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import { CheckCircle2, Lock, MessageCircle, Send } from "lucide-react";
 import type { IntakeState } from "@/app/empezar/actions";
-import { INTAKE_SECTIONS, isVisible, type IntakeAnswers, type IntakeQuestion } from "@/lib/intake";
+import { isVisible, sectionsFor, type IntakeAnswers, type IntakeKind, type IntakeQuestion } from "@/lib/intake";
 import { cn } from "@/lib/cn";
 
 type Action = (prev: IntakeState, fd: FormData) => Promise<IntakeState>;
@@ -93,7 +93,7 @@ function Question({ q, value, error }: { q: IntakeQuestion; value: IntakeAnswers
   );
 }
 
-export function IntakeForm({ action, greetingName, whatsappHref }: { action: Action; greetingName?: string | null; whatsappHref: string | null }) {
+export function IntakeForm({ action, greetingName, whatsappHref, kind }: { action: Action; greetingName?: string | null; whatsappHref: string | null; kind: IntakeKind }) {
   const [state, formAction, pending] = useActionState<IntakeState, FormData>(action, {});
   const [answers, setAnswers] = useState<IntakeAnswers>({});
   const shown = { ...(state.answers ?? {}), ...answers };
@@ -106,7 +106,7 @@ export function IntakeForm({ action, greetingName, whatsappHref }: { action: Act
         <p className="max-w-md text-muted">
           {greetingName
             ? "Tu coach ya recibió tus respuestas. Con esto arma tu plan a tu medida."
-            : "Ya recibí tus respuestas. Te escribo por WhatsApp para coordinar tu evaluación (online o presencial)."}
+            : "Ya recibí tu solicitud. Te escribo por WhatsApp para contarte los detalles y coordinar tu evaluación (online o presencial)."}
         </p>
         {whatsappHref && !greetingName && (
           <a href={whatsappHref} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex h-12 items-center gap-2 rounded-xl bg-red px-6 font-semibold text-white hover:bg-red-hover">
@@ -117,7 +117,7 @@ export function IntakeForm({ action, greetingName, whatsappHref }: { action: Act
     );
   }
 
-  const sections = INTAKE_SECTIONS.map((s) => ({ ...s, questions: s.questions.filter((q) => isVisible(q, shown)) }));
+  const sections = sectionsFor(kind).map((s) => ({ ...s, questions: s.questions.filter((q) => isVisible(q, shown)) }));
 
   return (
     <form
@@ -135,9 +135,11 @@ export function IntakeForm({ action, greetingName, whatsappHref }: { action: Act
 
       {sections.map((s, i) => (
         <section key={s.id} className="rounded-card border border-line bg-panel p-5 sm:p-6" aria-labelledby={`sec_${s.id}`}>
-          <p className="eyebrow text-red">
-            {i + 1} / {sections.length}
-          </p>
+          {sections.length > 1 && (
+            <p className="eyebrow text-red">
+              {i + 1} / {sections.length}
+            </p>
+          )}
           <h2 id={`sec_${s.id}`} className="mt-1 font-display text-3xl font-extrabold uppercase leading-none">
             {s.title}
           </h2>
@@ -174,9 +176,9 @@ export function IntakeForm({ action, greetingName, whatsappHref }: { action: Act
         disabled={pending}
         className="inline-flex h-14 items-center justify-center gap-2 rounded-xl bg-red px-6 text-lg font-semibold text-white transition-colors hover:bg-red-hover disabled:opacity-60"
       >
-        <Send size={19} /> {pending ? "Enviando…" : "Enviar cuestionario"}
+        <Send size={19} /> {pending ? "Enviando…" : kind === "short" ? "Enviar solicitud" : "Enviar cuestionario"}
       </button>
-      <p className="text-center text-xs text-faint">Te toma unos 5 minutos. Solo tu coach ve tus respuestas.</p>
+      <p className="text-center text-xs text-faint">{kind === "short" ? "Te toma 1 minuto. Te respondo por WhatsApp." : "Te toma unos 5 minutos. Solo tu coach ve tus respuestas."}</p>
     </form>
   );
 }
