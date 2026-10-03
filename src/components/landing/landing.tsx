@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { ArrowRight, Bell, CalendarCheck, Dumbbell, LineChart, MessageCircle, Salad, Smartphone, Target, Utensils } from "lucide-react";
 import { LogoHorizontal } from "@/components/brand/logo";
-import { SITE, whatsappUrl } from "@/lib/site";
+import { SITE, TESTIMONIALS, whatsappUrl } from "@/lib/site";
 import { cn } from "@/lib/cn";
 
 const STEPS = [
@@ -15,9 +15,9 @@ const STEPS = [
 const SERVICES = [
   {
     icon: Utensils,
-    name: "Nutrición",
+    name: "Alimentación",
     text: "Plan de alimentación a tu medida, con calorías y macros por día y opciones para cada comida.",
-    items: ["Plan nutricional personalizado", "Check-in semanal", "Medidas y comparativas"],
+    items: ["Plan de alimentación personalizado", "Check-in semanal", "Medidas y comparativas"],
   },
   {
     icon: Dumbbell,
@@ -28,14 +28,14 @@ const SERVICES = [
   {
     icon: Target,
     name: "Completo",
-    text: "Nutrición y entrenamiento juntos: el camino más rápido para ver resultados.",
-    items: ["Todo lo de nutrición", "Todo lo de entrenamiento", "Ajustes según tu progreso"],
+    text: "Alimentación y entrenamiento juntos: el camino más rápido para ver resultados.",
+    items: ["Todo lo de alimentación", "Todo lo de entrenamiento", "Ajustes según tu progreso"],
     featured: true,
   },
 ];
 
 const FEATURES = [
-  { icon: Salad, title: "Tu plan nutricional", text: "Calorías, macros y opciones de cada comida, siempre a mano." },
+  { icon: Salad, title: "Tu plan de alimentación", text: "Calorías, macros y opciones de cada comida, siempre a mano." },
   { icon: Dumbbell, title: "Tu rutina del día", text: "Marcás cada serie al terminarla y ves lo que hiciste la vez pasada." },
   { icon: CalendarCheck, title: "Check-ins semanales", text: "Peso, fotos y cómo te sentiste. Yo lo reviso y te respondo." },
   { icon: LineChart, title: "Tu progreso", text: "Peso, % de grasa, pliegues y medidas comparadas mes a mes." },
@@ -86,7 +86,7 @@ export function Landing() {
         <div aria-hidden className="pointer-events-none absolute -top-40 right-[-20%] h-[38rem] w-[38rem] rounded-full bg-red/20 blur-[120px]" />
         <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 pb-16 pt-12 sm:px-6 lg:grid-cols-[1.1fr_1fr] lg:pb-24 lg:pt-20">
           <div>
-            <p className="eyebrow text-red">Coaching online · Nutrición y entrenamiento</p>
+            <p className="eyebrow text-red">Asesorías online · Alimentación y entrenamiento</p>
             <h1 className="mt-4 font-display text-[3.4rem] font-extrabold uppercase leading-[0.9] tracking-tight sm:text-7xl lg:text-[5.5rem]">
               Tu mejor versión, <span className="text-red">con un plan hecho para vos</span>
             </h1>
@@ -180,14 +180,45 @@ export function Landing() {
         <div className="grid items-center gap-10 lg:grid-cols-[auto_1fr]">
           <img src={SITE.coachPhoto} alt={SITE.coachName} width={320} height={320} className="h-48 w-48 rounded-full border-4 border-red object-cover sm:h-64 sm:w-64" />
           <div>
-            <p className="eyebrow text-red">Tu coach</p>
+            <p className="eyebrow text-red">Tu asesor</p>
             <h2 className="mt-3 font-display text-5xl font-extrabold uppercase leading-none sm:text-6xl">{SITE.coachName}</h2>
             <p className="mt-5 max-w-2xl text-lg text-muted">
-              Coach de nutrición y entrenamiento. Mi trabajo es darte un plan que puedas cumplir y acompañarte cada semana hasta que llegues a tu objetivo.
+              Asesor de alimentación y entrenamiento. Acompaño a personas que quieren bajar grasa, ganar músculo y mejorar sus hábitos con un plan que puedan cumplir en su día a día, y con seguimiento cada semana hasta que llegan a su objetivo.
             </p>
           </div>
         </div>
       </section>
+
+      {/* Resultados: aparece solo cuando hay testimonios reales cargados en src/lib/site.ts */}
+      {TESTIMONIALS.length > 0 && (
+        <section className="border-t border-line/60 bg-graphite">
+          <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:py-24">
+            <p className="eyebrow text-red">Resultados</p>
+            <h2 className="mt-3 font-display text-5xl font-extrabold uppercase leading-none sm:text-6xl">Lo que logran mis clientes</h2>
+            <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {TESTIMONIALS.map((t) => (
+                <figure key={t.name} className="flex flex-col overflow-hidden rounded-card border border-line bg-panel">
+                  {t.before && t.after && (
+                    <div className="grid grid-cols-2 gap-px bg-line">
+                      {([["Antes", t.before], ["Después", t.after]] as const).map(([label, src]) => (
+                        <div key={label} className="relative">
+                          <img src={src} alt={`${t.name}: ${label.toLowerCase()}`} className="aspect-[3/4] w-full object-cover" />
+                          <span className="absolute left-2 top-2 rounded-full bg-ink/80 px-2 py-0.5 text-xs font-semibold">{label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex flex-1 flex-col p-5">
+                    {t.result && <p className="font-display text-3xl font-extrabold uppercase text-red">{t.result}</p>}
+                    <blockquote className="mt-2 text-sm text-muted">“{t.text}”</blockquote>
+                    <figcaption className="mt-auto pt-4 text-sm font-semibold">{t.name}</figcaption>
+                  </div>
+                </figure>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Llamado final */}
       <section id="contacto" className="relative scroll-mt-16 overflow-hidden border-t border-line/60">
