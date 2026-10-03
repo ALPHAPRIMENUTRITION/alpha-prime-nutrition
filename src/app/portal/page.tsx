@@ -11,6 +11,7 @@ import { Badge, Card, EmptyState } from "@/components/ui";
 import { MembershipLocked } from "@/components/portal/membership-locked";
 import { MembershipWarning } from "@/components/portal/membership-warning";
 import { InstallPrompt } from "@/components/pwa/install-prompt";
+import { PushPrompt } from "@/components/pwa/push-prompt";
 import { AvatarUpload } from "@/components/profile/avatar-upload";
 import { getSessionProfile } from "@/lib/auth";
 
@@ -61,6 +62,7 @@ export default async function PortalHome() {
     <div className="flex flex-col gap-5">
       <MembershipWarning status={membership} />
       <InstallPrompt />
+      <PushPrompt />
 
       <section>
         <div className="flex items-center gap-4">

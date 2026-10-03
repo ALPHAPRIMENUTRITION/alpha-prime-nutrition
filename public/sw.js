@@ -4,7 +4,7 @@
 //    de clientes en el teléfono. Sin conexión se muestra /offline.
 //  * Los archivos estáticos versionados de Next (/_next/static), íconos y
 //    fuentes se guardan en caché para que la app abra rápido.
-const VERSION = "v4";
+const VERSION = "v5";
 const STATIC_CACHE = `ap-static-${VERSION}`;
 const OFFLINE_URL = "/offline";
 const PRECACHE = [OFFLINE_URL, "/icons/icon-192.png", "/icons/icon-512.png", "/icons/apple-touch-icon.png"];
@@ -75,4 +75,46 @@ self.addEventListener("fetch", (event) => {
     );
   }
   // Todo lo demás (Supabase, datos, imágenes firmadas): directo a la red.
+});
+
+// ---------- Notificaciones push ----------
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = { body: event.data ? event.data.text() : "" };
+  }
+  const title = data.title || "Alpha Prime";
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body: data.body || "",
+      icon: "/icons/icon-192.png",
+      badge: "/icons/badge-96.png",
+      tag: data.tag,
+      data: { link: data.link || "/" },
+      lang: "es",
+    }),
+  );
+});
+
+// Al tocar el aviso: abre la app en la pantalla indicada (reusa la ventana si ya está abierta).
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const link = (event.notification.data && event.notification.data.link) || "/";
+  const target = new URL(link, self.location.origin);
+  if (target.origin !== self.location.origin) return;
+  event.waitUntil(
+    (async () => {
+      const wins = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      for (const w of wins) {
+        if (new URL(w.url).origin === self.location.origin && "focus" in w) {
+          await w.focus();
+          if ("navigate" in w) await w.navigate(target.href).catch(() => {});
+          return;
+        }
+      }
+      await self.clients.openWindow(target.href);
+    })(),
+  );
 });
