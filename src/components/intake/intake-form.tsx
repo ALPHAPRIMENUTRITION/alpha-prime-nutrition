@@ -194,9 +194,9 @@ function Question({ q, value, error }: { q: IntakeQuestion; value: IntakeAnswers
   );
 }
 
-export function IntakeForm({ action, greetingName, whatsappHref, kind }: { action: Action; greetingName?: string | null; whatsappHref: string | null; kind: IntakeKind }) {
+export function IntakeForm({ action, greetingName, whatsappHref, kind, initial }: { action: Action; greetingName?: string | null; whatsappHref: string | null; kind: IntakeKind; initial?: IntakeAnswers }) {
   const [state, formAction, pending] = useActionState<IntakeState, FormData>(action, {});
-  const [answers, setAnswers] = useState<IntakeAnswers>({});
+  const [answers, setAnswers] = useState<IntakeAnswers>(initial ?? {});
   const shown = { ...(state.answers ?? {}), ...answers };
 
   if (state.ok) {

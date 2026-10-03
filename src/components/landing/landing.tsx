@@ -16,18 +16,21 @@ const SERVICES = [
   {
     icon: Utensils,
     name: "Alimentación",
+    slug: "nutrition",
     text: "Plan de alimentación a tu medida, con calorías y macros por día y opciones para cada comida.",
     items: ["Plan de alimentación personalizado", "Check-in semanal", "Medidas y comparativas"],
   },
   {
     icon: Dumbbell,
     name: "Entrenamiento",
+    slug: "training",
     text: "Rutina por semanas con progresión. Registrás tus series y ves cómo subís de peso.",
     items: ["Rutina personalizada", "Registro de series y cargas", "Progresión semana a semana"],
   },
   {
     icon: Target,
     name: "Completo",
+    slug: "both",
     text: "Alimentación y entrenamiento juntos: el camino más rápido para ver resultados.",
     items: ["Todo lo de alimentación", "Todo lo de entrenamiento", "Ajustes según tu progreso"],
     featured: true,
@@ -35,6 +38,7 @@ const SERVICES = [
   {
     icon: Clock,
     name: "Personal 1 a 1",
+    slug: "personal",
     text: "Entrenamiento presencial conmigo: técnica, motivación y progreso en cada sesión.",
     items: ["Sesiones de 1 hora", "De lunes a viernes", "Horario a convenir"],
     presencial: true,
@@ -173,7 +177,15 @@ export function Landing() {
                 ))}
               </ul>
               <div className="mt-auto pt-6">
-                <Cta label="Consultar precio" className={cn("w-full", !s.featured && "border border-line bg-transparent hover:bg-panel-2")} />
+                <Link
+                  href={`/empezar?servicio=${s.slug}`}
+                  className={cn(
+                    "inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl px-6 text-base font-semibold transition-colors",
+                    s.featured ? "bg-red text-white hover:bg-red-hover" : "border border-line hover:bg-panel-2",
+                  )}
+                >
+                  <ClipboardList size={19} /> Quiero este plan
+                </Link>
               </div>
             </article>
           ))}

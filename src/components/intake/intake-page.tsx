@@ -9,10 +9,12 @@ export function IntakePage({
   action,
   greetingName,
   whatsappHref,
+  initial,
 }: {
   action: (prev: IntakeState, fd: FormData) => Promise<IntakeState>;
   greetingName?: string | null;
   whatsappHref: string | null;
+  initial?: Record<string, string>;
 }) {
   return (
     <div className="min-h-dvh">
@@ -39,7 +41,7 @@ export function IntakePage({
             : "Dejame tus datos y lo que buscás. Te escribo por WhatsApp con los detalles. La evaluación puede ser 100 % online o presencial."}
         </p>
         <div className="mt-8">
-          <IntakeForm action={action} greetingName={greetingName} whatsappHref={whatsappHref} kind={greetingName ? "full" : "short"} />
+          <IntakeForm action={action} greetingName={greetingName} whatsappHref={whatsappHref} kind={greetingName ? "full" : "short"} initial={initial} />
         </div>
       </main>
     </div>
