@@ -33,6 +33,33 @@ function diffText(actual: number, target: number | null, unit: string) {
   return `${d > 0 ? "+" : ""}${d.toLocaleString("es-SV")} ${unit}`;
 }
 
+/** Vista del cliente: solo lo que indica su plan (sin objetivos, diferencias ni barras). */
+export function PlanTotals({ actual, caption }: { actual: Macros; caption?: string }) {
+  return (
+    <div className="flex flex-col gap-4">
+      <div>
+        <span className="eyebrow">Calorías</span>
+        <p className="tnum font-display text-4xl font-extrabold leading-none">
+          {Math.round(actual.kcal).toLocaleString("es-SV")}
+          <span className="ml-1 text-base text-muted">kcal</span>
+        </p>
+      </div>
+      <div className="grid grid-cols-3 gap-3">
+        {ROWS.map((r) => (
+          <div key={r.key} className="min-w-0 rounded-xl bg-panel-2 px-2.5 py-2.5">
+            <span className="block text-[11px] text-muted sm:text-xs">{r.label}</span>
+            <p className="tnum text-lg font-semibold">
+              {Math.round(actual[r.key])}
+              <span className="ml-0.5 text-sm font-normal text-muted">{r.unit}</span>
+            </p>
+          </div>
+        ))}
+      </div>
+      {caption && <p className="text-xs text-faint">{caption}</p>}
+    </div>
+  );
+}
+
 /** Plan real vs objetivo: calorías y macros con su diferencia. */
 export function MacroSummary({ actual, targets, compact = false, caption }: { actual: Macros; targets: Targets; compact?: boolean; caption?: string }) {
   const kTone = tone(actual.kcal, targets.kcal);

@@ -9,7 +9,7 @@ import { Card, EmptyState } from "@/components/ui";
 import { MembershipLocked } from "@/components/portal/membership-locked";
 import { NotIncluded } from "@/components/portal/not-included";
 import { MembershipWarning } from "@/components/portal/membership-warning";
-import { MacroSummary } from "@/components/nutrition/macro-summary";
+import { PlanTotals } from "@/components/nutrition/macro-summary";
 import { cn } from "@/lib/cn";
 
 export const metadata: Metadata = { title: "Nutrición" };
@@ -115,12 +115,7 @@ export default async function PortalNutrition({ searchParams }: { searchParams: 
           {dayInfo.type ? ` · ${dayInfo.type.name}` : ""}
           {current?.label ? ` · ${current.label}` : ""}
         </p>
-        <MacroSummary
-          actual={totals}
-          targets={dayInfo.targets}
-          compact
-          caption="Total del día con la opción principal de cada comida."
-        />
+        <PlanTotals actual={totals} caption="Total del día con la opción principal de cada comida." />
       </Card>
 
       {current?.meals.length ? (
