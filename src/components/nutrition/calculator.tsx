@@ -71,7 +71,9 @@ export function NutritionCalculator({
     fat: String(defaults.bodyFatPct ?? prevIn?.bodyFatPct ?? ""),
     activity: String(prevIn?.activityFactor ?? defaults.activityFactor ?? 1.55),
     adjustMode: (prevIn?.adjustMode ?? "pct") as "pct" | "kcal",
-    adjust: String(prevIn?.adjustValue ?? 0),
+    // el valor se escribe sin signo; la dirección va aparte (el teclado del celular no trae "-")
+    dir: ((prevIn?.adjustValue ?? 0) < 0 ? "cut" : (prevIn?.adjustValue ?? 0) > 0 ? "bulk" : "keep") as "cut" | "keep" | "bulk",
+    adjust: prevIn?.adjustValue ? String(Math.abs(prevIn.adjustValue)) : "",
     protein: String(prevIn?.proteinPerKg ?? 2),
     fatMode: (prevIn?.fatMode ?? "pct") as "pct" | "per_kg",
     fatValue: String(prevIn?.fatValue ?? 25),
@@ -87,7 +89,7 @@ export function NutritionCalculator({
     bodyFatPct: v.fat.trim() === "" ? null : n(v.fat),
     activityFactor: n(v.activity),
     adjustMode: v.adjustMode,
-    adjustValue: n(v.adjust) || 0,
+    adjustValue: v.dir === "keep" ? 0 : (v.dir === "cut" ? -1 : 1) * Math.abs(n(v.adjust) || 0),
     proteinPerKg: n(v.protein) || 0,
     fatMode: v.fatMode,
     fatValue: n(v.fatValue) || 0,
@@ -239,15 +241,36 @@ export function NutritionCalculator({
           </div>
 
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Field label="Ajuste" htmlFor="calc_adjm">
-              <Select id="calc_adjm" value={v.adjustMode} onChange={set("adjustMode")} className="w-full">
-                <option value="pct">% del gasto</option>
-                <option value="kcal">kcal</option>
-              </Select>
-            </Field>
-            <Field label={v.adjustMode === "pct" ? "Valor (%)" : "Valor (kcal)"} htmlFor="calc_adj">
-              <Input id="calc_adj" type="number" inputMode="numeric" value={v.adjust} onChange={set("adjust")} placeholder="-15" />
-            </Field>
+            <div className="col-span-2 flex flex-col gap-1.5">
+              <span className="text-sm text-muted">Objetivo de calorías</span>
+              <div role="radiogroup" aria-label="Objetivo de calorías" className="grid grid-cols-3 gap-1 rounded-xl border border-line p-1">
+                {([["cut", "Déficit"], ["keep", "Mantener"], ["bulk", "Superávit"]] as const).map(([id, label]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    role="radio"
+                    aria-checked={v.dir === id}
+                    onClick={() => setV((s) => ({ ...s, dir: id, adjust: id === "keep" ? "" : s.adjust || (s.adjustMode === "pct" ? (id === "cut" ? "15" : "10") : (id === "cut" ? "400" : "250")) }))}
+                    className={cn("rounded-lg py-2 text-sm font-semibold", v.dir === id ? (id === "cut" ? "bg-red text-white" : id === "bulk" ? "bg-ok text-ink" : "bg-fg text-ink") : "text-muted hover:text-fg")}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {v.dir !== "keep" && (
+              <>
+                <Field label={v.dir === "cut" ? "Cuánto bajar" : "Cuánto subir"} htmlFor="calc_adj">
+                  <Input id="calc_adj" type="number" inputMode="decimal" min="0" value={v.adjust} onChange={set("adjust")} placeholder={v.adjustMode === "pct" ? "15" : "400"} />
+                </Field>
+                <Field label="En" htmlFor="calc_adjm">
+                  <Select id="calc_adjm" value={v.adjustMode} onChange={set("adjustMode")} className="w-full">
+                    <option value="pct">% del gasto</option>
+                    <option value="kcal">kcal</option>
+                  </Select>
+                </Field>
+              </>
+            )}
             <Field label="Proteína (g/kg)" htmlFor="calc_p">
               <Input id="calc_p" type="number" inputMode="decimal" step="0.1" value={v.protein} onChange={set("protein")} />
             </Field>
@@ -261,7 +284,7 @@ export function NutritionCalculator({
               </div>
             </Field>
           </div>
-          <p className="-mt-3 text-xs text-faint">Ajuste negativo = déficit, positivo = superávit. Los carbohidratos completan las calorías restantes.</p>
+          <p className="-mt-3 text-xs text-faint">Los carbohidratos completan las calorías restantes.</p>
 
           <section aria-label="Resultado" className="rounded-xl border border-line bg-panel p-4">
             {result ? (
