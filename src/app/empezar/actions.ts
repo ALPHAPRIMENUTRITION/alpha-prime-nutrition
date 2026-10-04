@@ -90,5 +90,34 @@ export async function submitIntakeAction(token: string | null, _prev: IntakeStat
     const msg = error.message.includes("Demasiados") ? "Recibimos varios envíos seguidos. Probá de nuevo en unos minutos." : error.message.includes("Link") ? "Este link no es válido." : "No se pudo enviar. Intentá de nuevo.";
     return { error: msg, answers: a, savedAt: Date.now() };
   }
+  if (token) await syncClientData(token, p).catch(() => {});
   return { ok: true, firstName: s("first_name") };
+}
+
+/** Pasa al expediente del cliente lo que todavía no tenga: fecha de nacimiento, sexo, estatura y peso inicial. */
+async function syncClientData(token: string, p: Record<string, unknown>) {
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return;
+  const admin = createAdminClient();
+  const { data: client } = await admin.from("clients").select("id").eq("intake_token", token).maybeSingle();
+  if (!client) return;
+  const str = (k: string) => (typeof p[k] === "string" && p[k] ? (p[k] as string) : null);
+  const birth = str("birth_date");
+  const sex = str("sex");
+  const height = Number(str("height_cm")) || null;
+  const weight = Number(str("weight_kg")) || null;
+
+  const { data: prof } = await admin.from("client_profiles").select("birth_date, sex, height_cm").eq("client_id", client.id).maybeSingle();
+  const patch: Record<string, unknown> = {};
+  if (birth && !prof?.birth_date) patch.birth_date = birth;
+  if (sex && !prof?.sex) patch.sex = sex;
+  if (height && height >= 50 && height <= 260 && !prof?.height_cm) patch.height_cm = height;
+  if (Object.keys(patch).length) {
+    if (prof) await admin.from("client_profiles").update(patch).eq("client_id", client.id);
+    else await admin.from("client_profiles").insert({ client_id: client.id, ...patch });
+  }
+
+  if (weight && weight >= 20 && weight <= 400) {
+    const { count } = await admin.from("measurements").select("id", { count: "exact", head: true }).eq("client_id", client.id).not("weight_kg", "is", null);
+    if (!count) await admin.from("measurements").insert({ client_id: client.id, weight_kg: Math.round(weight * 100) / 100 });
+  }
 }

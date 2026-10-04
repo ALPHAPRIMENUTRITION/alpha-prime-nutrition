@@ -55,6 +55,35 @@ export default async function PlanPage({ params }: { params: Promise<{ planId: s
     defaults.age = ageFrom(p?.birth_date);
     defaults.sex = (p?.sex as CalcDefaults["sex"]) ?? null;
     defaults.bodyFatPct = bf?.[0]?.body_fat_pct != null ? Number(bf[0].body_fat_pct) : null;
+
+    // Lo que falte se completa con el cuestionario del cliente (el más reciente, priorizando el completo)
+    const { data: intakes } = await supabase
+      .from("intakes")
+      .select("kind, weight_kg, height_cm, birth_date, sex, answers, created_at")
+      .eq("client_id", tree.client_id)
+      .order("created_at", { ascending: false })
+      .limit(10);
+    const rows = [...(intakes ?? [])].sort((a, b) => (a.kind === b.kind ? 0 : a.kind === "full" ? -1 : 1));
+    for (const i of rows) {
+      defaults.weightKg ??= i.weight_kg != null ? Number(i.weight_kg) : null;
+      defaults.heightCm ??= i.height_cm != null ? Number(i.height_cm) : null;
+      defaults.age ??= ageFrom(i.birth_date);
+      defaults.sex ??= (i.sex as CalcDefaults["sex"]) ?? null;
+    }
+    const full = rows.find((r) => r.kind === "full");
+    if (full) {
+      const a = (full.answers ?? {}) as Record<string, string | string[]>;
+      const days = Number(a.days_per_week) || 0;
+      const trains = a.trains_now === "Sí";
+      const job = String(a.job_activity ?? "");
+      let f = !trains || days === 0 ? 1.2 : days <= 2 ? 1.375 : days <= 5 ? 1.55 : 1.725;
+      if (job.startsWith("Haciendo trabajo físico")) f = Math.min(1.9, f === 1.2 ? 1.55 : f + 0.175);
+      else if (job.startsWith("De pie") && f === 1.2) f = 1.375;
+      defaults.activityFactor = Math.round(f * 1000) / 1000;
+      defaults.activityNote = [trains ? `entrena ${days || "?"} días por semana` : "no entrena actualmente", job ? `en su trabajo pasa ${job.toLowerCase()}` : null]
+        .filter(Boolean)
+        .join(" · ");
+    }
   }
 
   const today = todayISO();

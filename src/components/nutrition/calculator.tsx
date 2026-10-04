@@ -23,6 +23,11 @@ export interface CalcDefaults {
   age: number | null;
   sex: "male" | "female" | "other" | null;
   bodyFatPct: number | null;
+  /** Sugerido a partir del cuestionario del cliente */
+  activityFactor?: number | null;
+  /** De dónde salen los datos (p. ej. "cuestionario del 3 oct") */
+  source?: string | null;
+  activityNote?: string | null;
 }
 
 interface Targets {
@@ -64,7 +69,7 @@ export function NutritionCalculator({
     height: String(defaults.heightCm ?? prevIn?.heightCm ?? ""),
     age: String(defaults.age ?? prevIn?.age ?? ""),
     fat: String(defaults.bodyFatPct ?? prevIn?.bodyFatPct ?? ""),
-    activity: String(prevIn?.activityFactor ?? 1.55),
+    activity: String(prevIn?.activityFactor ?? defaults.activityFactor ?? 1.55),
     adjustMode: (prevIn?.adjustMode ?? "pct") as "pct" | "kcal",
     adjust: String(prevIn?.adjustValue ?? 0),
     protein: String(prevIn?.proteinPerKg ?? 2),
@@ -216,6 +221,7 @@ export function NutritionCalculator({
             <p className="-mt-3 text-xs text-warn">El perfil indica sexo "otro": elegí qué ecuación usar según tu criterio.</p>
           )}
 
+          {defaults.activityNote && <p className="-mb-2 text-xs text-muted">Según el cuestionario: {defaults.activityNote}</p>}
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Factor de actividad" htmlFor="calc_act">
               <Select id="calc_act" value={ACTIVITY_LEVELS.some((a) => String(a.value) === v.activity) ? v.activity : "custom"} onChange={(e) => setV((s) => ({ ...s, activity: e.target.value === "custom" ? s.activity : e.target.value }))} className="w-full">
