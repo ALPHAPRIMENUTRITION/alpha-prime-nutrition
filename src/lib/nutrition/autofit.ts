@@ -11,7 +11,7 @@
 // límites de caja → converge al óptimo) y luego se redondea a porciones
 // prácticas (5 g, 10 ml, 1 unidad) con un ajuste fino local.
 
-import type { Food } from "./plan";
+import { optionMacros, type Food, type PlanDay } from "./plan";
 
 export interface FitTargets { kcal: number; protein: number; carbs: number; fat: number }
 export interface FitItem { id: string; food: Food; quantity: number; locked: boolean }
@@ -113,4 +113,46 @@ export function fitQuantities(items: FitItem[], targets: FitTargets, priority: P
     .filter((g) => targets[g.key] > 0 && Math.abs(g.diff) / targets[g.key] > 0.1);
 
   return { quantities: new Map(items.map((it, i) => [it.id, xr[i]!])), totals, gaps };
+}
+
+/**
+ * Ajuste de un día completo:
+ *  1) opción A de cada comida → objetivos del día;
+ *  2) opciones B, C… → igualan los macros de la opción A de su comida.
+ */
+export function fitDay(
+  day: PlanDay,
+  foodMap: Map<string, Food>,
+  targets: FitTargets,
+  opts: { priority?: Partial<Record<keyof FitTargets, boolean>>; locked?: Set<string>; alsoAlternatives?: boolean } = {},
+) {
+  const { priority = { kcal: true, protein: true }, locked = new Set<string>(), alsoAlternatives = true } = opts;
+  const toItems = (opt: PlanDay["meals"][number]["options"][number]): FitItem[] =>
+    opt.items.flatMap((it) => {
+      const food = foodMap.get(it.food_id);
+      return food ? [{ id: it.id, food, quantity: it.quantity, locked: locked.has(it.id) }] : [];
+    });
+
+  const main = day.meals.flatMap((m) => (m.options[0] ? toItems(m.options[0]) : []));
+  const fit = fitQuantities(main, targets, priority);
+  const q = new Map(fit.quantities);
+
+  if (alsoAlternatives) {
+    for (const m of day.meals) {
+      const a = m.options[0];
+      if (!a || m.options.length < 2) continue;
+      const aMac = optionMacros({ ...a, items: a.items.map((i) => ({ ...i, quantity: q.get(i.id) ?? i.quantity })) }, foodMap);
+      for (const opt of m.options.slice(1)) {
+        const r = fitQuantities(toItems(opt), { kcal: aMac.kcal, protein: aMac.protein, carbs: aMac.carbs, fat: aMac.fat }, priority);
+        r.quantities.forEach((v, k) => q.set(k, v));
+      }
+    }
+  }
+
+  const updates: { id: string; quantity: number }[] = [];
+  for (const m of day.meals) for (const o of m.options) for (const i of o.items) {
+    const nq = q.get(i.id);
+    if (nq !== undefined && Math.abs(nq - i.quantity) > 1e-9) updates.push({ id: i.id, quantity: nq });
+  }
+  return { q, fit, updates };
 }

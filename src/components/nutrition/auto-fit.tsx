@@ -2,8 +2,8 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { ArrowRight, Lock, LockOpen } from "lucide-react";
-import { fitQuantities, type FitItem, type FitTargets } from "@/lib/nutrition/autofit";
-import { formatQty, optionMacros, type Food, type PlanDay } from "@/lib/nutrition/plan";
+import { fitDay, type FitTargets } from "@/lib/nutrition/autofit";
+import { formatQty, type Food, type PlanDay } from "@/lib/nutrition/plan";
 import { Button } from "@/components/ui";
 import { MacroSummary } from "@/components/nutrition/macro-summary";
 import { cn } from "@/lib/cn";
@@ -41,39 +41,8 @@ export function AutoFit({
   const [copyAll, setCopyAll] = useState(sameType.days.length > 0);
   const [priority, setPriority] = useState<Record<keyof FitTargets, boolean>>({ kcal: true, protein: true, carbs: false, fat: false });
 
-  const result = useMemo(() => {
-    const toItems = (opt: PlanDay["meals"][number]["options"][number]): FitItem[] =>
-      opt.items.flatMap((it) => {
-        const food = foodMap.get(it.food_id);
-        return food ? [{ id: it.id, food, quantity: it.quantity, locked: locked.has(it.id) }] : [];
-      });
-
-    const main = day.meals.flatMap((m) => (m.options[0] ? toItems(m.options[0]) : []));
-    const fit = fitQuantities(main, targets, priority);
-    const q = new Map(fit.quantities);
-
-    if (alsoAlternatives) {
-      for (const m of day.meals) {
-        const a = m.options[0];
-        if (!a || m.options.length < 2) continue;
-        const aMac = optionMacros({ ...a, items: a.items.map((i) => ({ ...i, quantity: q.get(i.id) ?? i.quantity })) }, foodMap);
-        for (const opt of m.options.slice(1)) {
-          const r = fitQuantities(toItems(opt), { kcal: aMac.kcal, protein: aMac.protein, carbs: aMac.carbs, fat: aMac.fat }, priority);
-          r.quantities.forEach((v, k) => q.set(k, v));
-        }
-      }
-    }
-    return { q, fit };
-  }, [day, foodMap, targets, locked, alsoAlternatives, priority]);
-
-  const updates = useMemo(() => {
-    const list: { id: string; quantity: number }[] = [];
-    for (const m of day.meals) for (const o of m.options) for (const i of o.items) {
-      const nq = result.q.get(i.id);
-      if (nq !== undefined && Math.abs(nq - i.quantity) > 1e-9) list.push({ id: i.id, quantity: nq });
-    }
-    return list;
-  }, [day, result]);
+  const result = useMemo(() => fitDay(day, foodMap, targets, { priority, locked, alsoAlternatives }), [day, foodMap, targets, locked, alsoAlternatives, priority]);
+  const updates = result.updates;
 
   const toggle = (id: string) => setLocked((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   const hasAlternatives = day.meals.some((m) => m.options.length > 1);

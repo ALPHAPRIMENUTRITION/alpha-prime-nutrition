@@ -16,6 +16,7 @@ import { MealCard, type MealHandlers } from "@/components/nutrition/meal-card";
 import { NutritionCalculator, describeCalculation, type CalcDefaults } from "@/components/nutrition/calculator";
 import { DayTargets } from "@/components/nutrition/day-targets";
 import { AutoFit } from "@/components/nutrition/auto-fit";
+import { FitPlan } from "@/components/nutrition/fit-plan";
 import { DayTypesCard, type DayTypeHandlers } from "@/components/nutrition/day-types";
 import { SupplementsEditor, type SupplementHandlers } from "@/components/nutrition/supplements-editor";
 import { cn } from "@/lib/cn";
@@ -70,7 +71,7 @@ export function PlanEditor({
   const [day, setDay] = useState(initialDay);
   const [toast, setToast] = useState<{ text: string; bad?: boolean } | null>(null);
   const [busy, startBusy] = useTransition();
-  const [dialog, setDialog] = useState<null | "calc" | "meta" | "dup" | "copyDay" | "fit" | { copyMeal: string }>(null);
+  const [dialog, setDialog] = useState<null | "calc" | "meta" | "dup" | "copyDay" | "fit" | "fitPlan" | { copyMeal: string }>(null);
 
   useEffect(() => setTree(withPending(plan, pendingQty.current)), [plan]);
   useEffect(() => {
@@ -89,6 +90,16 @@ export function PlanEditor({
   const targets = dayInfo.targets;
   const calc = (tree.calculation ?? null) as CalculationSnapshot | null;
   const isTemplate = !tree.client_id;
+  const hasFood = tree.days.some((d) => d.meals.some((m) => m.options.some((o) => o.items.length)));
+
+  // Recién copiado de otro cliente (?ajustar=1): ofrecer ajustar todo a los objetivos de este cliente
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("ajustar") !== "1") return;
+    url.searchParams.delete("ajustar");
+    window.history.replaceState(null, "", url.toString());
+    if (plan.target_kcal && plan.days.some((d) => d.meals.length)) setDialog("fitPlan");
+  }, [plan.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ------------------------------------------------ guardado
   const saveQty = useCallback(async (itemId: string) => {
@@ -231,6 +242,11 @@ export function PlanEditor({
           <Button type="button" size="sm" variant={dayInfo.type ? "secondary" : "primary"} onClick={() => setDialog("calc")}>
             <Calculator size={15} /> {tree.target_kcal ? "Calculadora · objetivo general" : "Definir objetivos"}
           </Button>
+          {tree.target_kcal && hasFood ? (
+            <Button type="button" size="sm" variant="secondary" onClick={async () => { await flush(); setDialog("fitPlan"); }}>
+              <Wand2 size={15} /> Ajustar todo el plan
+            </Button>
+          ) : null}
         </div>
         <MacroSummary actual={totals} targets={targets} caption="Total del día con la primera opción de cada comida." />
         {dayInfo.type ? (
@@ -370,8 +386,9 @@ export function PlanEditor({
           onApply={async (payload) => {
             const res = await A.setTargetsAction(plan.id, payload);
             if (!res.ok) return res.error;
-            setDialog(null);
             setToast({ text: "Objetivos actualizados" });
+            // Si ya hay comidas, ofrecer ajustar las cantidades a los nuevos objetivos
+            setDialog(hasFood ? "fitPlan" : null);
             return null;
           }}
         />
@@ -391,10 +408,29 @@ export function PlanEditor({
             const res = await A.duplicatePlanAction(plan.id, target || null, name);
             if (!res.ok) return res.error;
             setDialog(null);
-            router.push(`/coach/planes/${res.data}`);
+            router.push(`/coach/planes/${res.data}${target && target !== client?.id ? "?ajustar=1" : ""}`);
             return null;
           }}
         />
+      </Dialog>
+
+      <Dialog open={dialog === "fitPlan"} onClose={() => setDialog(null)} title="Ajustar todo el plan" wide>
+        {dialog === "fitPlan" && (
+          <FitPlan
+            tree={tree}
+            foodMap={foodMap}
+            clientName={client?.name.split(" ")[0]}
+            onApply={async (updates) => {
+              let ok = true;
+              for (let i = 0; ok && i < updates.length; i += 300) {
+                const chunk = updates.slice(i, i + 300);
+                ok = await run(() => A.applyQuantitiesAction(plan.id, chunk), i + 300 >= updates.length ? "Plan ajustado a sus objetivos" : undefined);
+              }
+              if (ok) setDialog(null);
+              return ok;
+            }}
+          />
+        )}
       </Dialog>
 
       <Dialog open={dialog === "fit"} onClose={() => setDialog(null)} title={`Auto-ajustar ${DAY_NAMES[day - 1]}${dayInfo.type ? ` · ${dayInfo.type.name}` : ""}`} wide>

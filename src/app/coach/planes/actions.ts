@@ -130,6 +130,7 @@ export async function duplicatePlanAction(planId: string, targetClientId: string
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("nutrition_copy_plan", { p_plan: planId, p_client: targetClientId, p_name: n.data });
   if (error || !data) return fail("No se pudo copiar el plan.");
+  if (targetClientId) await keepClientTargets(supabase, planId, data as string, targetClientId);
   if (targetClientId) revalidatePath(`/coach/clientes/${targetClientId}`);
   revalidatePath("/coach/planes");
   return { ok: true, data: data as string };
@@ -564,4 +565,38 @@ export async function deleteFoodAction(foodId: string): Promise<ActionResult> {
   }
   revalidatePath("/coach/alimentos");
   return { ok: true };
+}
+
+/**
+ * Al copiar un plan a OTRO cliente, el plan nuevo conserva los objetivos que ese cliente
+ * ya tenía (su plan más reciente con objetivos). Los tipos de día se escalan en la misma proporción.
+ * Si el cliente no tenía objetivos, se dejan vacíos para calcularlos con sus datos.
+ */
+async function keepClientTargets(supabase: Awaited<ReturnType<typeof createClient>>, sourceId: string, newId: string, clientId: string) {
+  const { data: src } = await supabase.from("nutrition_plans").select("client_id, target_kcal, target_protein_g, target_carbs_g, target_fat_g").eq("id", sourceId).maybeSingle();
+  if (!src || src.client_id === clientId) return;
+  const { data: own } = await supabase
+    .from("nutrition_plans")
+    .select("target_kcal, target_protein_g, target_carbs_g, target_fat_g, calculation")
+    .eq("client_id", clientId)
+    .neq("id", newId)
+    .not("target_kcal", "is", null)
+    .order("is_active", { ascending: false })
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const next = own ?? { target_kcal: null, target_protein_g: null, target_carbs_g: null, target_fat_g: null, calculation: null };
+  await supabase.from("nutrition_plans").update(next).eq("id", newId);
+
+  // Tipos de día: misma proporción que el objetivo general (si se puede calcular)
+  const keys = ["target_kcal", "target_protein_g", "target_carbs_g", "target_fat_g"] as const;
+  const { data: types } = await supabase.from("nutrition_day_types").select("id, target_kcal, target_protein_g, target_carbs_g, target_fat_g").eq("plan_id", newId);
+  for (const t of types ?? []) {
+    const patch: Record<string, number | null> = {};
+    for (const k of keys) {
+      const from = Number(src[k]), to = Number(next[k]), v = Number(t[k]);
+      patch[k] = from > 0 && to > 0 && v > 0 ? Math.round((v * to) / from) : null;
+    }
+    await supabase.from("nutrition_day_types").update(patch).eq("id", t.id);
+  }
 }
